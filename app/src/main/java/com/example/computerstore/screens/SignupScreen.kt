@@ -44,7 +44,17 @@ import androidx.navigation.NavHostController
 import com.example.computerstore.R
 import com.example.computerstore.screens.components.CustomCheckbox
 import com.example.computerstore.ui.components.CustomTextField
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import com.google.firebase.auth.FirebaseAuth
+import android.widget.Toast
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 @Composable
 fun SignupScreen(onClose: () -> Unit) {
     // State variables for the text fields and checkbox
@@ -53,6 +63,12 @@ fun SignupScreen(onClose: () -> Unit) {
     var confirmPassword by remember { mutableStateOf("")}
     var rememberMe by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+
 
     Box(
         modifier = Modifier
@@ -207,17 +223,54 @@ fun SignupScreen(onClose: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Sign-in Button
+                    // Sign-up Button
                     Button(
-                        onClick = { /* Handle sign-in logic */ },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        onClick = {
+                            if (password == confirmPassword && email.isNotEmpty() && password.length >= 6) {
+                                scope.launch {
+                                    try {
+                                        val result = auth.createUserWithEmailAndPassword(email, password).await()
+                                        val user = result.user
+                                        user?.let {
+                                            val db = FirebaseFirestore.getInstance()
+                                            val profile = hashMapOf(
+                                                "user_id" to it.uid,
+                                                "email" to it.email,
+                                                "full_name" to "User",
+                                                "gender" to "male",
+                                                "phone_number" to "",
+                                                "birthday" to null,
+                                                "is_admin" to 0,
+                                                "created_at" to FieldValue.serverTimestamp()
+                                            )
+                                            db.collection("users").document(it.uid).set(profile)
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(context, "✅ Signup success: ${user.email}", Toast.LENGTH_SHORT).show()
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    Toast.makeText(context, "⚠️ Failed to save profile: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                }
+
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "❌ Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(context, "⚠️ Check your inputs!", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF3F7DE8)
                         ),
                     ) {
-                        Text("Sign in", fontSize = 16.sp)
+                        Text("Sign up", fontSize = 16.sp)
                     }
-                    // Sign-up Link at the bottom
+
+                    // Sign-in Link at the bottom
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {

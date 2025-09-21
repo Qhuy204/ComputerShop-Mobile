@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "956005334254",
+    "project_id": "computerstore-315d0",
+    "storage_bucket": "computerstore-315d0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:956005334254:android:ae8c87f4ec0e5c411787ff",
+        "android_client_info": {
+          "package_name": "com.example.computerstore"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbD9QGWx-F1je9Qvi_DI2zC7yucf-wK-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,98 +1,132 @@
 package com.example.computerstore.screens
 
-import android.R.attr.content
-import android.R.attr.onClick
-import android.R.id.content
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.computerstore.R
+import androidx.compose.ui.unit.sp
 import com.example.computerstore.screens.buttons.BackButton
-import com.google.ai.client.generativeai.type.content
+import com.example.computerstore.screens.components.NumberPad
+import com.example.computerstore.screens.components.OtpInput
 
 @Composable
-fun VerificationScreen() {
-    // State variables for the text fields and checkbox
+fun VerificationScreen(
+    onBackClick: () -> Unit = {}
+) {
     var verifyCode by remember { mutableStateOf("") }
-    var rememberMe by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
+    val otpLength = 4
+    val yourEmail = "Qhuy204@gmail.com"
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .fillMaxWidth()
             .background(color = Color.White)
+            .padding(start = 18.dp, top = 42.dp, end = 18.dp, bottom = 42.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .clickable(onClick = onClick)
-                .background(color = Color(0xFFE8EAE9))
-                .padding(start = 40.dp, top = 40.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.leftarrow),
-                contentDescription = "Back",
-            )
-        }
+        // Back button
+        BackButton(
+            onClick = onBackClick,
+            backgroundColor = Color(0xFFE8EAE9),
+            iconTint = Color.Black,
+            size = 48,
+            modifier = Modifier.align(Alignment.TopStart)
+        )
 
-
-        // Main Content Column
+        // Main content
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(0.dp),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.Start
+                .padding(top = 70.dp),
         ) {
-            Card(
+            Text(
+                text = "Verify Code",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Enter the code we just sent",
+                fontSize = 16.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = yourEmail,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // Hiển thị OTP
+            OtpInput(
+                otpLength = otpLength,
+                otpValue = verifyCode,
+                onOtpChange = { verifyCode = it },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Text("Didn't get OTP?", color = Color.Gray, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Text(
+                "Resend code",
+                color = Color(0xFF0066FF),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Bàn phím số
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 0.dp)
-                    .height(600.dp),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // màu nền card
-                )
+                    .padding(12.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color(0xFFe8e9ee))
+                    .align(Alignment.CenterHorizontally)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                ) {
-
-
-                }
+                NumberPad(
+                    onNumberClick = { digit ->
+                        if (verifyCode.length < otpLength && digit.all { it.isDigit() }) {
+                            verifyCode += digit
+                            if (verifyCode.length == otpLength) {
+                                println("OTP nhập đủ: $verifyCode")
+                            }
+                        }
+                    },
+                    onDeleteClick = {
+                        if (verifyCode.isNotEmpty()) {
+                            verifyCode = verifyCode.dropLast(1)
+                        }
+                    }
+                )
             }
-
-
+            Spacer(modifier = Modifier.height(40.dp))
+            Button(
+                onClick = { /* Handle sign-in logic */ },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF3F7DE8)
+                ),
+            ) {
+                Text("Verify", fontSize = 16.sp)
+            }
         }
     }
 }

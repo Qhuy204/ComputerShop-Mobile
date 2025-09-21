@@ -1,11 +1,11 @@
 package com.example.computerstore.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,23 +13,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import com.example.computerstore.R
 import com.example.computerstore.screens.components.CustomCheckbox
 import com.example.computerstore.ui.components.CustomTextField
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.navigation.NavHostController
 
 @Composable
-fun LoginScreen(onSignupClick: () -> Unit) {
-    // State variables for the text fields and checkbox
+fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
     Box(
         modifier = Modifier
@@ -37,19 +46,18 @@ fun LoginScreen(onSignupClick: () -> Unit) {
             .fillMaxWidth()
             .background(Color(0xFFE8F0FF))
             .clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }
-        ) {
-            focusManager.clearFocus()
-        }
-
-
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
+                focusManager.clearFocus()
+            }
     ) {
+        // Background
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(350.dp)
-        ){
+        ) {
             Image(
                 painter = painterResource(id = R.drawable.loginbackground),
                 contentDescription = "Login background",
@@ -79,7 +87,7 @@ fun LoginScreen(onSignupClick: () -> Unit) {
             }
         }
 
-        // Main Content Column
+        // Main content
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -94,14 +102,9 @@ fun LoginScreen(onSignupClick: () -> Unit) {
                     .height(600.dp),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White // màu nền card
-                )
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                ) {
+                Column(modifier = Modifier.padding(24.dp)) {
                     Text(
                         text = "Sign in",
                         fontSize = 24.sp,
@@ -109,7 +112,7 @@ fun LoginScreen(onSignupClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Email Input Field
+                    // Email Input
                     CustomTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -121,7 +124,7 @@ fun LoginScreen(onSignupClick: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Password Input Field
+                    // Password Input
                     CustomTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -134,8 +137,7 @@ fun LoginScreen(onSignupClick: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-
-                    // Checkbox and Forgot Password Row
+                    // Checkbox + Forgot
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -143,23 +145,21 @@ fun LoginScreen(onSignupClick: () -> Unit) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             CustomCheckbox(
-                                modifier = Modifier
-                                    .offset(x = 3.dp, y = (0).dp),
+                                modifier = Modifier.offset(x = 3.dp, y = (0).dp),
                                 checked = rememberMe,
                                 size = 24.dp,
                                 uncheckedBorderColor = Color.Transparent,
                                 uncheckedBackgroundColor = Color(0xFFE5E5E5),
                                 onCheckedChange = { rememberMe = it }
                             )
-
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Remember me")
                         }
 
-                        TextButton(
-                            onClick = { /* Handle forgot password */ }) {
-                            Text(text ="Forgot password?",
-                                color = Color(0xFF3F7DE8))
+                        TextButton(onClick = {
+                            // TODO: triển khai reset password
+                        }) {
+                            Text("Forgot password?", color = Color(0xFF3F7DE8))
                         }
                     }
 
@@ -167,18 +167,44 @@ fun LoginScreen(onSignupClick: () -> Unit) {
 
                     // Sign-in Button
                     Button(
-                        onClick = { /* Handle sign-in logic */ },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF3F7DE8)
-                        ),
+                        onClick = {
+                            if (email.isNotEmpty() && password.isNotEmpty()) {
+                                scope.launch {
+                                    try {
+                                        val result = auth.signInWithEmailAndPassword(email, password).await()
+                                        val user = result.user
+                                        if (user != null) {
+                                            val doc = db.collection("users").document(user.uid).get().await()
+                                            val profile = doc.data
+                                            Toast.makeText(
+                                                context,
+                                                "✅ Welcome ${profile?.get("full_name") ?: user.email}",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+                                            // 🔹 Điều hướng sang HomeScreen
+                                            navController.navigate("home") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "❌ Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(context, "⚠️ Please enter email & password", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F7DE8))
                     ) {
                         Text("Sign in", fontSize = 16.sp)
                     }
-                    // Sign-up Link at the bottom
-                    Box(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
+
+                    // Signup link
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -191,13 +217,10 @@ fun LoginScreen(onSignupClick: () -> Unit) {
                             TextButton(onClick = onSignupClick) {
                                 Text("Sign up", color = Color(0xFF3F7DE8))
                             }
-
                         }
                     }
                 }
             }
-
-
         }
     }
 }

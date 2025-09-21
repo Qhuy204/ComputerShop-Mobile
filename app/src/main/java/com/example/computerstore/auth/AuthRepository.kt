@@ -1,4 +1,4 @@
-package com.example.computerstore.data.repository
+package com.example.computerstore.auth
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
