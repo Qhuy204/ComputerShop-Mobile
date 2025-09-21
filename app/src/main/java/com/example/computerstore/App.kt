@@ -20,6 +20,7 @@ import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.example.computerstore.screens.LoginScreen
 import com.example.computerstore.screens.SignupScreen
+import com.example.computerstore.screens.VerificationScreen
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -29,26 +30,27 @@ fun App() {
     Surface(color = MaterialTheme.colorScheme.background) {
         Box {
             // Luôn luôn hiển thị SignIn (nền)
-            LoginScreen(
-                onSignupClick = { showSignup = true }
-            )
-
-            // SignUp overlay
-            AnimatedVisibility(
-                visible = showSignup,
-                enter = slideInHorizontally(
-                    initialOffsetX = { it }, // trượt từ phải sang
-                    animationSpec = tween(700, easing = LinearOutSlowInEasing)
-                ),
-                exit = slideOutHorizontally(
-                    targetOffsetX = { it }, // trượt ra phải
-                    animationSpec = tween(700, easing = LinearOutSlowInEasing)
-                )
-            ) {
-                SignupScreen(
-                    onClose = { showSignup = false },
-                )
-            }
+//            LoginScreen(
+//                onSignupClick = { showSignup = true }
+//            )
+//
+//            // SignUp overlay
+//            AnimatedVisibility(
+//                visible = showSignup,
+//                enter = slideInHorizontally(
+//                    initialOffsetX = { it }, // trượt từ phải sang
+//                    animationSpec = tween(700, easing = LinearOutSlowInEasing)
+//                ),
+//                exit = slideOutHorizontally(
+//                    targetOffsetX = { it }, // trượt ra phải
+//                    animationSpec = tween(700, easing = LinearOutSlowInEasing)
+//                )
+//            ) {
+//                SignupScreen(
+//                    onClose = { showSignup = false },
+//                )
+//            }
+            VerificationScreen()
         }
     }
 }
