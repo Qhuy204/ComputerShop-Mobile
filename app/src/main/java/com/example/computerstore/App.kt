@@ -1,30 +1,27 @@
 package com.example.computerstore
 
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.composable
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.computerstore.screens.LoginScreen
 import com.example.computerstore.screens.SignupScreen
-import com.example.computerstore.screens.HomeScreen
 import com.google.firebase.auth.FirebaseAuth
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun App() {
-    val navController = rememberAnimatedNavController()
+    val navController = rememberNavController()
     val auth = FirebaseAuth.getInstance()
-    val startDestination = if (auth.currentUser != null) "home" else "login"
+    val startDestination = if (auth.currentUser != null) "main" else "login"
 
     Surface(color = MaterialTheme.colorScheme.background) {
-        AnimatedNavHost(
+        NavHost(
             navController = navController,
-            startDestination = startDestination
+            startDestination = startDestination,
         ) {
             composable("login") {
                 LoginScreen(
@@ -35,13 +32,15 @@ fun App() {
             composable("signup") {
                 SignupScreen(onClose = { navController.popBackStack() })
             }
-            composable("home") {
-                HomeScreen(onLogout = {
-                    auth.signOut()
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
+            composable("main") {
+                MainScaffold(
+                    onLogout = {
+                        auth.signOut()
+                        navController.navigate("login") {
+                            popUpTo("main") { inclusive = true }
+                        }
                     }
-                })
+                )
             }
         }
     }

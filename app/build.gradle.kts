@@ -53,7 +53,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose.android)
     implementation(libs.generativeai)
     implementation(libs.ui)
-//    implementation(libs.firebase.firestore.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,4 +66,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
