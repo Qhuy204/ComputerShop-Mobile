@@ -59,8 +59,8 @@ fun ProductRegion(
 
             // Tabs filter
             if (categories.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    categories.forEach { category ->
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(categories) { category ->
                         FilterChip(
                             selected = selectedCategory == category,
                             onClick = { selectedCategory = category },
@@ -69,6 +69,7 @@ fun ProductRegion(
                     }
                 }
             }
+
 
             Spacer(modifier = Modifier.height(12.dp))
 

@@ -30,7 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavHostController
 
 @Composable
-fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit) {
+fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onLoginSuccess: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }

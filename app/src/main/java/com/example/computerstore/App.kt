@@ -26,7 +26,12 @@ fun App() {
             composable("login") {
                 LoginScreen(
                     navController = navController,
-                    onSignupClick = { navController.navigate("signup") }
+                    onSignupClick = { navController.navigate("signup") },
+                    onLoginSuccess = {
+                        navController.navigate("main") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
                 )
             }
             composable("signup") {

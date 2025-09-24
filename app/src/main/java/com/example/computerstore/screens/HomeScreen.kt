@@ -2,28 +2,19 @@ package com.example.computerstore.screens
 
 import ProductRegion
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.overscroll
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,25 +25,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.example.computerstore.data.model.Product
-import com.example.computerstore.ui.components.CustomTextField
-import com.example.computerstore.viewmodel.ProductViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.example.computerstore.R
-import com.example.computerstore.screens.buttons.CustomButton
 import com.example.computerstore.screens.components.BannerSection
+import com.example.computerstore.screens.components.BannerSection1
+import com.example.computerstore.screens.components.HeaderSection
 import com.example.computerstore.screens.components.HorizontalItem
 import com.example.computerstore.screens.components.ItemList
 import com.example.computerstore.screens.components.ViewedProduct
 import com.example.computerstore.screens.components.ViewedProductsSection
+import com.example.computerstore.viewmodel.ProductViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun HomeScreen(
@@ -76,81 +63,16 @@ fun HomeScreen(
         ) {
             // Header (search bar + user button)
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(140.dp)
-                        .background(Color.Black)
-                        .padding(top = 60.dp, start = 16.dp, end = 16.dp)
-                ) {
-                    CustomTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = "Search for a product",
-                        iconRes = R.drawable.ic_search,
-                        focusManager = focusManager,
-                        isLastField = true,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(30.dp))
-                            .height(56.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    CustomButton(
-                        onClick = { /* add something */ },
-                        iconRes = R.drawable.ic_user,
-                        backgroundColor = Color.Black,
-                        iconTint = Color.White,
-                        size = 56.dp,
-                        modifier = Modifier
-                            .border(
-                                width = 0.5.dp,
-                                color = Color.LightGray,
-                                shape = RoundedCornerShape(30.dp)
-                            )
-                    )
-                }
+                HeaderSection(
+                    searchQuery = searchQuery,
+                    onSearchChange = { searchQuery = it },
+                    focusManager = focusManager
+                )
             }
-
-            // Banner + Check Now section
             item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(130.dp)
-                        .background(Color.Black)
-                        .padding(horizontal = 16.dp)
-                ) {
-                    Text(
-                        text = "Power Up Your Next Upgrade",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-
-                    Text(
-                        text = "Top gear, best performance, trusted by gamers.",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.LightGray
-                    )
-
-                    Button(
-                        onClick = { /* add something */ },
-                        modifier = Modifier
-                            .width(200.dp)
-                            .padding(top = 16.dp),
-                        shape = RoundedCornerShape(5.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFE30000),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text("Check Now", fontWeight = FontWeight.Bold)
-                    }
-                }
+                BannerSection1(
+                    onCheckNowClick = { /* TODO: navigate to promotion */ }
+                )
             }
 
             // Multi Banner
@@ -184,7 +106,6 @@ fun HomeScreen(
                         // TODO: điều hướng sang ProductDetailScreen(product)
                     }
                 )
-
             }
 
             item{
@@ -234,8 +155,8 @@ fun HomeScreen(
 
             item{
                 ProductRegion(
-                    title = "PC bán chạy",
-                    categories = listOf("PC I3", "PC I5", "PC I7", "PC I9"),
+                    title = "Laptop bán chạy",
+                    categories = listOf("Laptop Dell", "Laptop Acer", "Laptop Asus", "Laptop Lenovo"),
                     products = products.filter { it.category_id == 1 }, // ví dụ lọc theo category_id
                     onViewAllClick = { /* TODO: navigate list */ },
                     onProductClick = { product ->
@@ -247,6 +168,36 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
+            item{
+                ProductRegion(
+                    title = "PC bán chạy",
+                    categories = listOf("PC I3", "PC I5", "PC I7", "PC I9"),
+                    products = products.filter { it.category_id == 2 }, // ví dụ lọc theo category_id
+                    onViewAllClick = { /* TODO: navigate list */ },
+                    onProductClick = { product ->
+                        // TODO: navController.navigate("productDetail/${product.product_id}")
+                    }
+                )
+            }
+            item{
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+
+            item{
+                ProductRegion(
+                    title = "Màn hình bán chạy",
+                    categories = listOf("Màn hình LG", "Màn hình Samsung", "Màn hình Asus"),
+                    products = products.filter { it.category_id == 3 }, // ví dụ lọc theo category_id
+                    onViewAllClick = { /* TODO: navigate list */ },
+                    onProductClick = { product ->
+                        // TODO: navController.navigate("productDetail/${product.product_id}")
+                    }
+                )
+            }
+            item{
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // Logout button
 //            item {
