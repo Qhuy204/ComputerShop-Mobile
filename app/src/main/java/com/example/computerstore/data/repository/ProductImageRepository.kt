@@ -9,4 +9,10 @@ class ProductImageRepository(private val productImageDao: ProductImageDao) {
     suspend fun addProductImage(productImage: ProductImage) = productImageDao.insert(productImage)
     suspend fun updateProductImage(productImage: ProductImage) = productImageDao.update(productImage)
     suspend fun deleteProductImage(id: Int) = productImageDao.delete(id)
+    suspend fun getProductImagesByProduct(productId: Int): List<ProductImage> =
+        productImageDao.getByProductId(productId)
+    suspend fun getByProductId(productId: Int): List<com.example.computerstore.data.model.ProductImage> {
+        return productImageDao.getByProductId(productId)
+    }
+
 }

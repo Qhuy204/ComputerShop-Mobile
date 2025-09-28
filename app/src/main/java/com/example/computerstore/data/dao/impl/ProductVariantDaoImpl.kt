@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class ProductVariantDaoImpl : ProductVariantDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("productVariants")
+    private val collection = db.collection("product_variants")
 
     override suspend fun getAll(): List<ProductVariant> {
         val snapshot = collection.get().await()
@@ -30,4 +30,10 @@ class ProductVariantDaoImpl : ProductVariantDao {
     override suspend fun delete(id: Int) {
         collection.document(id.toString()).delete().await()
     }
+
+    override suspend fun getByProductId(productId: Int): List<ProductVariant> {
+        val snapshot = collection.whereEqualTo("product_id", productId).get().await()
+        return snapshot.documents.mapNotNull { it.toObject(ProductVariant::class.java) }
+    }
+
 }

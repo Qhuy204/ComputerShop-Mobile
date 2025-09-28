@@ -24,16 +24,17 @@ class OrderViewModel : ViewModel() {
         }
     }
 
-    fun loadOrder(id: Int) {
+    fun loadOrder(id: String) {
         viewModelScope.launch {
             _currentOrder.value = repository.getOrder(id)
         }
     }
 
-    fun addOrder(order: Order) {
+    fun addOrder(order: Order, onSuccess: (String) -> Unit = {}) {
         viewModelScope.launch {
-            repository.addOrder(order)
+            val orderId = repository.addOrder(order)
             loadAllOrders()
+            onSuccess(orderId)
         }
     }
 
@@ -44,7 +45,7 @@ class OrderViewModel : ViewModel() {
         }
     }
 
-    fun deleteOrder(id: Int) {
+    fun deleteOrder(id: String) {
         viewModelScope.launch {
             repository.deleteOrder(id)
             loadAllOrders()

@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class OrderStatusHistoryDaoImpl : OrderStatusHistoryDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("orderStatusHistory")
+    private val collection = db.collection("order_status_history")
 
     override suspend fun getAll(): List<OrderStatusHistory> {
         val snapshot = collection.get().await()

@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class ProductImageDaoImpl : ProductImageDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("productImages")
+    private val collection = db.collection("product_images")
 
     override suspend fun getAll(): List<ProductImage> {
         val snapshot = collection.get().await()
@@ -17,6 +17,13 @@ class ProductImageDaoImpl : ProductImageDao {
     override suspend fun getById(id: Int): ProductImage? {
         val doc = collection.document(id.toString()).get().await()
         return doc.toObject(ProductImage::class.java)
+    }
+
+    override suspend fun getByProductId(productId: Int): List<ProductImage> {
+        val snapshot = collection.whereEqualTo("product_id", productId.toLong()).get().await()
+        val result = snapshot.documents.mapNotNull { it.toObject(ProductImage::class.java) }
+        android.util.Log.d("ProductImageDaoImpl", "Query product_id=$productId => ${result.size} images")
+        return result
     }
 
     override suspend fun insert(productImage: ProductImage) {

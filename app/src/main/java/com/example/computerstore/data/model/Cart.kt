@@ -4,8 +4,8 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
 
 data class Cart(
-    @get:PropertyName("cart_id") @set:PropertyName("cart_id") var cart_id: Int = 0,
-    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: Int? = null,
+    @get:PropertyName("cart_id") @set:PropertyName("cart_id") var cart_id: String? = null,
+    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: String? = null,
     @get:PropertyName("product_id") @set:PropertyName("product_id") var product_id: Int? = null,
     @get:PropertyName("variant_id") @set:PropertyName("variant_id") var variant_id: Int? = null,
     @get:PropertyName("variant_sku") @set:PropertyName("variant_sku") var variant_sku: String? = null,

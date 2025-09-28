@@ -8,4 +8,6 @@ interface ProductSpecificationDao {
     suspend fun insert(productSpecification: ProductSpecification)
     suspend fun update(productSpecification: ProductSpecification)
     suspend fun delete(id: Int)
+    suspend fun getByProductId(productId: Int): List<ProductSpecification>
 }
+

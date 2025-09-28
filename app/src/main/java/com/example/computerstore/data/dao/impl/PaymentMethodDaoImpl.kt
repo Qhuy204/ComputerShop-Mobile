@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class PaymentMethodDaoImpl : PaymentMethodDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("paymentMethods")
+    private val collection = db.collection("payment_methods")
 
     override suspend fun getAll(): List<PaymentMethod> {
         val snapshot = collection.get().await()

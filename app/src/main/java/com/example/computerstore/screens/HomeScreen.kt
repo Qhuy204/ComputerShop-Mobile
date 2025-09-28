@@ -3,17 +3,22 @@ package com.example.computerstore.screens
 import ProductRegion
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.overscroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.computerstore.data.model.Product
 import com.example.computerstore.screens.components.BannerSection
 import com.example.computerstore.screens.components.BannerSection1
@@ -38,6 +45,7 @@ import com.example.computerstore.screens.components.HorizontalItem
 import com.example.computerstore.screens.components.ItemList
 import com.example.computerstore.screens.components.ViewedProduct
 import com.example.computerstore.screens.components.ViewedProductsSection
+import com.example.computerstore.viewmodel.ProductImageViewModel
 import com.example.computerstore.viewmodel.ProductViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -45,21 +53,28 @@ import com.google.firebase.auth.FirebaseAuth
 fun HomeScreen(
     onLogout: () -> Unit,
     listState: LazyListState,
-    productViewModel: ProductViewModel = viewModel()
+    navController: androidx.navigation.NavController,
+    productViewModel: ProductViewModel = viewModel(),
+    productImageViewModel: ProductImageViewModel = viewModel()
 ) {
     val user = FirebaseAuth.getInstance().currentUser
     val products by productViewModel.products.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
+    val images by productImageViewModel.productImages.collectAsState()
 
     LaunchedEffect(Unit) {
         productViewModel.loadAllProducts()
+        productImageViewModel.loadAllProductImages()
     }
 
     if (user != null) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize().background(color = Color.LightGray).overscroll(overscrollEffect  = null)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.LightGray)
+                .overscroll(overscrollEffect = null)
         ) {
             // Header (search bar + user button)
             item {
@@ -96,7 +111,7 @@ fun HomeScreen(
                     ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
                     ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
 
-                )
+                    )
 
                 ViewedProductsSection(
                     products = viewedProducts,
@@ -153,63 +168,50 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            item{
+            // Hiển thị danh sách sản phẩm (demo laptop bán chạy)
+            item {
                 ProductRegion(
                     title = "Laptop bán chạy",
                     categories = listOf("Laptop Dell", "Laptop Acer", "Laptop Asus", "Laptop Lenovo"),
-                    products = products.filter { it.category_id == 1 }, // ví dụ lọc theo category_id
-                    onViewAllClick = { /* TODO: navigate list */ },
+                    products = products.filter { it.category_id == 1 },
+                    images = images,
+                    onViewAllClick = { /* TODO: navigate to list */ },
                     onProductClick = { product ->
-                        // TODO: navController.navigate("productDetail/${product.product_id}")
+                        navController.navigate("product/${product.product_id}")
                     }
                 )
             }
-            item{
-                Spacer(modifier = Modifier.height(8.dp))
-            }
 
-            item{
+
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            item {
                 ProductRegion(
                     title = "PC bán chạy",
                     categories = listOf("PC I3", "PC I5", "PC I7", "PC I9"),
-                    products = products.filter { it.category_id == 2 }, // ví dụ lọc theo category_id
+                    products = products.filter { it.category_id == 2 },
                     onViewAllClick = { /* TODO: navigate list */ },
+                    images = images,
                     onProductClick = { product ->
-                        // TODO: navController.navigate("productDetail/${product.product_id}")
+                        navController.navigate("product/${product.product_id}")
                     }
                 )
             }
-            item{
-                Spacer(modifier = Modifier.height(8.dp))
-            }
 
+            item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            item{
+            item {
                 ProductRegion(
                     title = "Màn hình bán chạy",
                     categories = listOf("Màn hình LG", "Màn hình Samsung", "Màn hình Asus"),
-                    products = products.filter { it.category_id == 3 }, // ví dụ lọc theo category_id
+                    products = products.filter { it.category_id == 3 },
                     onViewAllClick = { /* TODO: navigate list */ },
+                    images = images,
                     onProductClick = { product ->
-                        // TODO: navController.navigate("productDetail/${product.product_id}")
+                        navController.navigate("product/${product.product_id}")
                     }
                 )
             }
-            item{
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Logout button
-//            item {
-//                Spacer(modifier = Modifier.height(32.dp))
-//                Button(onClick = {
-//                    FirebaseAuth.getInstance().signOut()
-//                    onLogout()
-//                }) {
-//                    Text("Logout")
-//                }
-//                Spacer(modifier = Modifier.height(16.dp))
-//            }
         }
     } else {
         Box(
@@ -222,19 +224,38 @@ fun HomeScreen(
 }
 
 
+
 @Composable
-fun ProductItem(product: Product) {
+fun ProductItem(
+    product: Product,
+    imageUrl: String? = null,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Product ID: ${product.product_id}", fontSize = 16.sp)
-            Text(text = "Name: ${product.product_name}", fontSize = 16.sp)
-            Text(text = "Price: $${product.base_price}", fontSize = 16.sp)
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = imageUrl ?: "https://via.placeholder.com/150",
+                contentDescription = product.product_name,
+                modifier = Modifier
+                    .size(80.dp)
+                    .background(Color.LightGray, RoundedCornerShape(8.dp))
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(product.product_name ?: "Sản phẩm", fontWeight = FontWeight.Bold)
+                Text("Giá: ${"%,.0f".format(product.base_price)} đ", color = Color.Red)
+            }
         }
     }
 }
-
-

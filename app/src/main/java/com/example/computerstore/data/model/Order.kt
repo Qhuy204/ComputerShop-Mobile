@@ -4,8 +4,8 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
 
 data class Order(
-    @get:PropertyName("order_id") @set:PropertyName("order_id") var order_id: Int = 0,
-    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: Int? = null,
+    @get:PropertyName("order_id") @set:PropertyName("order_id") var order_id: String? = null,
+    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: String? = null,
     @get:PropertyName("guest_email") @set:PropertyName("guest_email") var guest_email: String? = null,
     @get:PropertyName("guest_phone") @set:PropertyName("guest_phone") var guest_phone: String? = null,
     @get:PropertyName("guest_name") @set:PropertyName("guest_name") var guest_name: String? = null,

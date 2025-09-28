@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class UserAddressDaoImpl : UserAddressDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("userAddresses")
+    private val collection = db.collection("user_addresses")
 
     override suspend fun getAll(): List<UserAddress> {
         val snapshot = collection.get().await()

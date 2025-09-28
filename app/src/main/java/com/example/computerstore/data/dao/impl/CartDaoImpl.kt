@@ -7,27 +7,44 @@ import kotlinx.coroutines.tasks.await
 
 class CartDaoImpl : CartDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("carts")
+    private val collection = db.collection("carts") // bảng trong Firestore
 
     override suspend fun getAll(): List<Cart> {
         val snapshot = collection.get().await()
         return snapshot.documents.mapNotNull { it.toObject(Cart::class.java) }
     }
 
-    override suspend fun getById(id: Int): Cart? {
-        val doc = collection.document(id.toString()).get().await()
+    override suspend fun getById(id: String): Cart? {
+        val doc = collection.document(id).get().await()
         return doc.toObject(Cart::class.java)
     }
 
     override suspend fun insert(cart: Cart) {
-        collection.document(cart.cart_id.toString()).set(cart).await()
+        val docId: String = cart.cart_id?.takeIf { it.isNotEmpty() } ?: collection.document().id
+        collection.document(docId).set(cart.copy(cart_id = docId)).await()
     }
+
 
     override suspend fun update(cart: Cart) {
-        collection.document(cart.cart_id.toString()).set(cart).await()
+        if (!cart.cart_id.isNullOrEmpty()) {
+            collection.document(cart.cart_id!!).set(cart).await()
+        }
     }
 
-    override suspend fun delete(id: Int) {
-        collection.document(id.toString()).delete().await()
+    override suspend fun delete(id: String) {
+        collection.document(id).delete().await()
     }
+
+    override suspend fun getCartsByUser(userId: String): List<Cart> {
+        val snapshot = collection.whereEqualTo("user_id", userId).get().await()
+        return snapshot.toObjects(Cart::class.java)
+    }
+
+    override suspend fun updateQuantity(cartId: String?, newQuantity: Int) {
+        cartId?.let { id ->
+            collection.document(id).update("quantity", newQuantity).await()
+        }
+    }
+
 }
+

@@ -50,4 +50,11 @@ class ProductImageViewModel : ViewModel() {
             loadAllProductImages()
         }
     }
+
+    fun loadProductImagesByProduct(productId: Int) {
+        viewModelScope.launch {
+            _productImages.value = repository.getProductImagesByProduct(productId)
+        }
+    }
+
 }

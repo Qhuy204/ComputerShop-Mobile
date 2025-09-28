@@ -9,4 +9,5 @@ class ProductVariantRepository(private val productVariantDao: ProductVariantDao)
     suspend fun addProductVariant(productVariant: ProductVariant) = productVariantDao.insert(productVariant)
     suspend fun updateProductVariant(productVariant: ProductVariant) = productVariantDao.update(productVariant)
     suspend fun deleteProductVariant(id: Int) = productVariantDao.delete(id)
+    suspend fun getVariantsByProductId(id: Int): List<ProductVariant> = productVariantDao.getByProductId(id)
 }

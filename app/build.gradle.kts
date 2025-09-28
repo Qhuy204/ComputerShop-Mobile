@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose.android)
     implementation(libs.generativeai)
     implementation(libs.ui)
+    implementation(libs.androidx.compose.ui.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

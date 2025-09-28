@@ -23,18 +23,16 @@ fun ProductRegion(
     title: String,
     categories: List<String>,
     products: List<Product>,
+    images: List<com.example.computerstore.data.model.ProductImage>,
     onViewAllClick: () -> Unit,
     onProductClick: (Product) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf(categories.firstOrNull() ?: "") }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-//            .padding(8.dp), // cách viền ngoài 8dp
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             // Header
@@ -42,11 +40,7 @@ fun ProductRegion(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(
                     text = "Xem tất cả",
                     fontSize = 14.sp,
@@ -70,17 +64,23 @@ fun ProductRegion(
                 }
             }
 
-
             Spacer(modifier = Modifier.height(12.dp))
 
             // Product cards
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth().overscroll(overscrollEffect  = null)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .overscroll(overscrollEffect = null)
             ) {
                 items(products) { product ->
+                    val imageUrl = images.find {
+                        it.product_id?.toInt() == product.product_id && it.is_primary == 1
+                    }?.image_url
+
                     ProductCard2(
                         product = product,
+                        imageUrl = imageUrl,
                         onClick = { onProductClick(product) }
                     )
                 }
@@ -89,8 +89,13 @@ fun ProductRegion(
     }
 }
 
+
 @Composable
-fun ProductCard2(product: Product, onClick: () -> Unit) {
+fun ProductCard2(
+    product: Product,
+    imageUrl: String?,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .width(170.dp)
@@ -101,7 +106,7 @@ fun ProductCard2(product: Product, onClick: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             AsyncImage(
-                model = product.description ?: "", // tạm dùng description chứa link ảnh nếu có
+                model = imageUrl ?: "https://via.placeholder.com/150",
                 contentDescription = product.product_name,
                 modifier = Modifier
                     .fillMaxWidth()

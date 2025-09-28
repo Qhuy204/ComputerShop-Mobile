@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class VariantAttributeValueDaoImpl : VariantAttributeValueDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("variantAttributeValues")
+    private val collection = db.collection("variant_attribute_values")
 
     override suspend fun getAll(): List<VariantAttributeValue> {
         val snapshot = collection.get().await()

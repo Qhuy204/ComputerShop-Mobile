@@ -8,4 +8,5 @@ interface ProductVariantDao {
     suspend fun insert(productVariant: ProductVariant)
     suspend fun update(productVariant: ProductVariant)
     suspend fun delete(id: Int)
+    suspend fun getByProductId(id: Int): List<ProductVariant>
 }

@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
 
 data class User(
-    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: Int = 0,
+    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: String? = null,
     @get:PropertyName("username") @set:PropertyName("username") var username: String? = null,
     @get:PropertyName("email") @set:PropertyName("email") var email: String? = null,
     @get:PropertyName("password") @set:PropertyName("password") var password: String? = null,

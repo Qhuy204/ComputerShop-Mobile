@@ -18,6 +18,16 @@ class ProductSpecificationViewModel : ViewModel() {
     private val _currentProductSpecification = MutableStateFlow<ProductSpecification?>(null)
     val currentProductSpecification: StateFlow<ProductSpecification?> = _currentProductSpecification
 
+
+    private val _specs = MutableStateFlow<List<ProductSpecification>>(emptyList())
+    val specs: StateFlow<List<ProductSpecification>> = _specs
+
+    fun loadSpecificationsByProduct(productId: Int) {
+        viewModelScope.launch {
+            _specs.value = repository.getSpecificationsByProductId(productId)
+        }
+    }
+
     fun loadAllProductSpecifications() {
         viewModelScope.launch {
             _productSpecifications.value = repository.getProductSpecifications()

@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class AttributeTypeDaoImpl : AttributeTypeDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("attributeTypes")
+    private val collection = db.collection("attribute_types")
 
     override suspend fun getAll(): List<AttributeType> {
         val snapshot = collection.get().await()

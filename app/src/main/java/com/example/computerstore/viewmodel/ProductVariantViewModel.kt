@@ -15,6 +15,18 @@ class ProductVariantViewModel : ViewModel() {
     private val _productVariants = MutableStateFlow<List<ProductVariant>>(emptyList())
     val productVariants: StateFlow<List<ProductVariant>> = _productVariants
 
+    private val _variants = MutableStateFlow<List<ProductVariant>>(emptyList())
+    val variants: StateFlow<List<ProductVariant>> = _variants
+
+    fun loadVariantsByProduct(productId: Int) {
+        viewModelScope.launch {
+            _variants.value = repository.getVariantsByProductId(productId)
+            // Chọn variant default nếu có
+            _currentProductVariant.value = _variants.value.firstOrNull { it.is_default == 1 }
+        }
+    }
+
+
     private val _currentProductVariant = MutableStateFlow<ProductVariant?>(null)
     val currentProductVariant: StateFlow<ProductVariant?> = _currentProductVariant
 

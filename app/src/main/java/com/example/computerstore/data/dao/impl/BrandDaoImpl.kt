@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class BrandDaoImpl : BrandDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("brands")
+    private val collection = db.collection("brand")
 
     override suspend fun getAll(): List<Brand> {
         val snapshot = collection.get().await()
