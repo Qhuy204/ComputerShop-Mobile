@@ -28,7 +28,7 @@ data class HorizontalItem(
 fun ItemList(
     title: String,
     items: List<HorizontalItem>,
-    onItemClick: (HorizontalItem) -> Unit // callback click
+    onItemClick: (HorizontalItem) -> Unit
 ) {
     Column(modifier = Modifier.padding(8.dp)) {
         Text(

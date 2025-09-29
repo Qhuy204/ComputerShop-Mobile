@@ -17,11 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.computerstore.R
 
 data class ViewedProduct(
     val name: String,
@@ -33,7 +35,7 @@ data class ViewedProduct(
 
 @Composable
 fun ViewedProductsSection(
-    title: String = "Sản phẩm đã xem",
+    title: String = stringResource(R.string.recent_view),
     products: List<ViewedProduct>,
     onProductClick: (ViewedProduct) -> Unit // callback khi click vào card
 ) {

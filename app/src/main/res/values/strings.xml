@@ -1,3 +1,21 @@
 <resources>
-    <string name="app_name">ComputerStore</string>
+    <string name="app_name">GearVN</string>
+    <string name="search_string">Search for a product</string>
+    <string name="recent_view">Recent view</string>
+    <string name="brand">Brand</string>
+    <string name="category_ads">Best-selling %1$s</string>
+    <string name="category">Category</string>
+    <string name="cart">Cart</string>
+    <string name="cat_1">Laptop</string>
+    <string name="cat_2">Desktop PC</string>
+    <string name="cat_3">Monitor</string>
+    <string name="cat_4">Keyboard</string>
+    <string name="cat_5">Mouse</string>
+    <string name="cat_6">Headphone</string>
+    <string name="cat_7">Speaker</string>
+    <string name="cat_8">Storage</string>
+    <string name="cat_9">RAM</string>
+    <string name="cat_10">Graphics Card</string>
+    <string name="cat_11">Mainboard</string>
+    <string name="cat_12">CPU</string>
 </resources>

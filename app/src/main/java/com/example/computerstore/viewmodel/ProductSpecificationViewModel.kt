@@ -18,7 +18,7 @@ class ProductSpecificationViewModel : ViewModel() {
     private val _currentProductSpecification = MutableStateFlow<ProductSpecification?>(null)
     val currentProductSpecification: StateFlow<ProductSpecification?> = _currentProductSpecification
 
-
+    // 👉 Đây là state chính mà ProductRegion đang dùng
     private val _specs = MutableStateFlow<List<ProductSpecification>>(emptyList())
     val specs: StateFlow<List<ProductSpecification>> = _specs
 
@@ -30,7 +30,9 @@ class ProductSpecificationViewModel : ViewModel() {
 
     fun loadAllProductSpecifications() {
         viewModelScope.launch {
-            _productSpecifications.value = repository.getProductSpecifications()
+            val list = repository.getProductSpecifications()
+            _productSpecifications.value = list
+            _specs.value = list
         }
     }
 

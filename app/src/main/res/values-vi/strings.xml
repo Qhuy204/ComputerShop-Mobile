@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">GearVN</string>
+    <string name="search_string">Bạn cần tìm gì</string>
+    <string name="recent_view">Sản phẩm vừa xem</string>
+    <string name="brand">Thương hiệu</string>
+    <string name="category_ads">%1$s bán chạy</string>
+    <string name="category">Danh mục sản phẩm</string>
+    <string name="cart">Giỏ hàng</string>
+    <string name="cat_1">Laptop</string>
+    <string name="cat_2">Máy tính bàn</string>
+    <string name="cat_3">Màn hình</string>
+    <string name="cat_4">Bàn phím</string>
+    <string name="cat_5">Chuột</string>
+    <string name="cat_6">Tai nghe</string>
+    <string name="cat_7">Loa</string>
+    <string name="cat_8">Ổ cứng</string>
+    <string name="cat_9">RAM</string>
+    <string name="cat_10">Card đồ họa</string>
+    <string name="cat_11">Mainboard</string>
+    <string name="cat_12">CPU</string>
+
+</resources>
