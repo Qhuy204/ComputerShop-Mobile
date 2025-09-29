@@ -28,7 +28,8 @@ import com.example.computerstore.R
 @Composable
 fun NewsScreen(
     blogViewModel: BlogViewModel = viewModel(),
-    onBlogClick: (Blog) -> Unit // onBlogClick không còn có giá trị mặc định nữa
+    onBlogClick: (Blog) -> Unit,
+    navController: androidx.navigation.NavController,
 ) {
     val blogs by blogViewModel.blogs.collectAsState()
     var isGrid by remember { mutableStateOf(false) }
@@ -56,11 +57,11 @@ fun NewsScreen(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column {
                     HeaderSection(
-                        searchQuery = searchQuery,
-                        onSearchChange = { searchQuery = it },
-                        focusManager = focusManager
+                        searchQuery = "",
+                        onSearchChange = {},
+                        focusManager = LocalFocusManager.current,
+                        navController = navController
                     )
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -100,9 +101,10 @@ fun NewsScreen(
             item {
                 Column {
                     HeaderSection(
-                        searchQuery = searchQuery,
-                        onSearchChange = { searchQuery = it },
-                        focusManager = focusManager
+                        searchQuery = "",
+                        onSearchChange = {},
+                        focusManager = LocalFocusManager.current,
+                        navController = navController
                     )
 
                     Row(

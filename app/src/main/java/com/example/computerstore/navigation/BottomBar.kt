@@ -18,6 +18,7 @@ fun BottomBar(navController: NavController) {
     val screens = remember {
         listOf(
             BottomBarScreen.Home,
+            BottomBarScreen.Category,
             BottomBarScreen.News,
             BottomBarScreen.Cart,
             BottomBarScreen.Profile

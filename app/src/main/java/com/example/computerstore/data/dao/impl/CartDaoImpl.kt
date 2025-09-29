@@ -7,7 +7,7 @@ import kotlinx.coroutines.tasks.await
 
 class CartDaoImpl : CartDao {
     private val db = FirebaseFirestore.getInstance()
-    private val collection = db.collection("carts") // bảng trong Firestore
+    private val collection = db.collection("carts")
 
     override suspend fun getAll(): List<Cart> {
         val snapshot = collection.get().await()

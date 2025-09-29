@@ -79,9 +79,10 @@ fun HomeScreen(
             // Header (search bar + user button)
             item {
                 HeaderSection(
-                    searchQuery = searchQuery,
-                    onSearchChange = { searchQuery = it },
-                    focusManager = focusManager
+                    searchQuery = "",
+                    onSearchChange = {},
+                    focusManager = LocalFocusManager.current,
+                    navController = navController
                 )
             }
             item {
@@ -168,11 +169,10 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Hiển thị danh sách sản phẩm (demo laptop bán chạy)
             item {
                 ProductRegion(
                     title = "Laptop bán chạy",
-                    categories = listOf("Laptop Dell", "Laptop Acer", "Laptop Asus", "Laptop Lenovo"),
+                    categories = listOf(),
                     products = products.filter { it.category_id == 1 },
                     images = images,
                     onViewAllClick = { /* TODO: navigate to list */ },
@@ -188,7 +188,7 @@ fun HomeScreen(
             item {
                 ProductRegion(
                     title = "PC bán chạy",
-                    categories = listOf("PC I3", "PC I5", "PC I7", "PC I9"),
+                    categories = listOf(),
                     products = products.filter { it.category_id == 2 },
                     onViewAllClick = { /* TODO: navigate list */ },
                     images = images,
@@ -203,7 +203,7 @@ fun HomeScreen(
             item {
                 ProductRegion(
                     title = "Màn hình bán chạy",
-                    categories = listOf("Màn hình LG", "Màn hình Samsung", "Màn hình Asus"),
+                    categories = listOf(),
                     products = products.filter { it.category_id == 3 },
                     onViewAllClick = { /* TODO: navigate list */ },
                     images = images,
@@ -212,6 +212,64 @@ fun HomeScreen(
                     }
                 )
             }
+
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            item {
+                ProductRegion(
+                    title = "Bàn phím bán chạy",
+                    categories = listOf(),
+                    products = products.filter { it.category_id == 4 },
+                    onViewAllClick = { /* TODO: navigate list */ },
+                    images = images,
+                    onProductClick = { product ->
+                        navController.navigate("product/${product.product_id}")
+                    }
+                )
+            }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            item {
+                ProductRegion(
+                    title = "Chuột bán chạy",
+                    categories = listOf(),
+                    products = products.filter { it.category_id == 5 },
+                    onViewAllClick = { /* TODO: navigate list */ },
+                    images = images,
+                    onProductClick = { product ->
+                        navController.navigate("product/${product.product_id}")
+                    }
+                )
+            }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            item {
+                ProductRegion(
+                    title = "Tai nghe bán chạy",
+                    categories = listOf(),
+                    products = products.filter { it.category_id == 6 },
+                    onViewAllClick = { /* TODO: navigate list */ },
+                    images = images,
+                    onProductClick = { product ->
+                        navController.navigate("product/${product.product_id}")
+                    }
+                )
+            }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            item {
+                ProductRegion(
+                    title = "Loa bán chạy",
+                    categories = listOf(),
+                    products = products.filter { it.category_id == 7 },
+                    onViewAllClick = { /* TODO: navigate list */ },
+                    images = images,
+                    onProductClick = { product ->
+                        navController.navigate("product/${product.product_id}")
+                    }
+                )
+            }
+
         }
     } else {
         Box(

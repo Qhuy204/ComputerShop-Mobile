@@ -111,6 +111,7 @@ fun ProductDetailsScreen(
             item {
                 Column(
                     Modifier
+                        .fillMaxWidth()
                         .background(Color.White)
                         .padding(12.dp)
                 ) {
@@ -132,7 +133,7 @@ fun ProductDetailsScreen(
             item {
                 QuantitySelectorShopee(
                     quantity = quantity,
-                    onQuantityChange = { quantity = it }
+                    onQuantityChange = { quantity = it },
                 )
             }
 
@@ -249,7 +250,8 @@ fun QuantitySelectorShopee(quantity: Int, onQuantityChange: (Int) -> Unit) {
     Row(
         Modifier
             .background(Color.White)
-            .padding(12.dp),
+            .padding(12.dp)
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("Số lượng: ")
@@ -374,7 +376,7 @@ fun DescriptionHtml(htmlContent: String) {
 @Composable
 fun SpecTable(specs: List<ProductSpecification>) {
     if (specs.isEmpty()) {
-        Text("Chưa có thông số kỹ thuật", Modifier.padding(12.dp))
+        Text("Chưa có thông số kỹ thuật", Modifier.padding(12.dp).fillMaxWidth())
     } else {
         Column(Modifier.padding(12.dp)) {
             specs.forEach {

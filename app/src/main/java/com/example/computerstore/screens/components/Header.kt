@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusManager
+import androidx.navigation.NavController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.computerstore.R
@@ -25,7 +26,8 @@ import com.example.computerstore.ui.components.CustomTextField
 fun HeaderSection(
     searchQuery: String,
     onSearchChange: (String) -> Unit,
-    focusManager: FocusManager
+    focusManager: FocusManager,
+    navController: NavController
 ) {
     val navController = rememberNavController()
 
@@ -69,7 +71,6 @@ fun HeaderSection(
                     shape = RoundedCornerShape(30.dp)
                 )
         )
-
 
     }
 }

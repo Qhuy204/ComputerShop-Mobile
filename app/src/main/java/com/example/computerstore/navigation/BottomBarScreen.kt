@@ -8,7 +8,11 @@ sealed class BottomBarScreen(
     val iconRes: Int
 ) {
     object Home : BottomBarScreen("home", "Home", R.drawable.home)
+    object Category : BottomBarScreen("category", "Category", R.drawable.filter)
+
     object News : BottomBarScreen("news", "News", R.drawable.paper)
     object Cart : BottomBarScreen("cart", "Cart", R.drawable.bag)
     object Profile : BottomBarScreen("profile", "Profile", R.drawable.profile)
+
+
 }
