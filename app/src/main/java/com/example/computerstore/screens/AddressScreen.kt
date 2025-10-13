@@ -25,9 +25,8 @@ import com.example.computerstore.viewmodel.ProductVariantViewModel
 import com.example.computerstore.viewmodel.ProductViewModel
 import com.google.firebase.auth.FirebaseAuth
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(
+fun AddressScreen(
     navController: NavController,
     cartViewModel: CartViewModel = viewModel(),
     productViewModel: ProductViewModel = viewModel(),

@@ -39,9 +39,9 @@ fun HeaderSection(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(116.dp)
+            .height(100.dp)
             .background(Color(0xFFE30000))
-            .padding(top = 30.dp, start = 16.dp, end = 16.dp)
+            .padding(top = 22.dp, start = 16.dp, end = 16.dp)
     ) {
         Box(
             modifier = Modifier

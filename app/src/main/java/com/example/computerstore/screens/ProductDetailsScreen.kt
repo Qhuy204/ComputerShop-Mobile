@@ -1,28 +1,34 @@
 package com.example.computerstore.screens
 
-import android.content.Context
 import android.util.Log
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.overscroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,8 +39,13 @@ import coil.compose.AsyncImage
 import com.example.computerstore.data.model.ProductImage
 import com.example.computerstore.data.model.ProductSpecification
 import com.example.computerstore.data.model.ProductVariant
+import com.example.computerstore.screens.buttons.BackButton
+import com.example.computerstore.screens.components.BottomBarShopee
+import com.example.computerstore.screens.components.PromoSection
 import com.example.computerstore.viewmodel.*
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +56,10 @@ fun ProductDetailsScreen(
     variantViewModel: ProductVariantViewModel = viewModel(),
     specViewModel: ProductSpecificationViewModel = viewModel(),
     imageViewModel: ProductImageViewModel = viewModel(),
-    cartViewModel: CartViewModel = viewModel()
+    cartViewModel: CartViewModel = viewModel(),
+    productImageViewModel: ProductImageViewModel = viewModel(),
+    categoryViewMoel: CategoryViewModel = viewModel(),
+    onBackClick: () -> Unit = {}
 ) {
     val product by productViewModel.currentProduct.collectAsState()
     val variants by variantViewModel.variants.collectAsState()
@@ -53,7 +67,6 @@ fun ProductDetailsScreen(
     val images by imageViewModel.productImages.collectAsState()
 
     val selectedVariant = variants.firstOrNull { it.is_default == 1 } ?: variants.firstOrNull()
-
     var quantity by remember { mutableStateOf(1) }
 
     val auth = FirebaseAuth.getInstance()
@@ -65,6 +78,9 @@ fun ProductDetailsScreen(
         variantViewModel.loadVariantsByProduct(productId)
         specViewModel.loadSpecificationsByProduct(productId)
         imageViewModel.loadProductImagesByProduct(productId)
+        productViewModel.loadAllProducts()
+        productImageViewModel.loadAllProductImages()
+        categoryViewMoel.loadAllCategories()
     }
 
     Log.d("ProductDetailsScreen", "Product: $product")
@@ -93,19 +109,23 @@ fun ProductDetailsScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F5)),
+                .background(Color.White),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+
             // Ảnh sản phẩm
             item {
+                val filteredImages = images.filter { it.product_id?.toInt() == productId }
+
                 ProductImageSliderShopee(
                     productName = product?.product_name ?: "",
                     variant = selectedVariant,
-                    images = images
+                    images = filteredImages,
+                    onBackClick = onBackClick
                 )
             }
+
 
             // Tên + Giá
             item {
@@ -120,22 +140,84 @@ fun ProductDetailsScreen(
 
                     if (product != null && selectedVariant != null) {
                         PriceDisplayShopee(product!!.base_price.toDouble(), selectedVariant)
-                        Text(
-                            text = "Kho: ${selectedVariant.stock_quantity ?: 0}",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
+//                        Text(
+//                            text = "Kho: ${selectedVariant.stock_quantity ?: 0}",
+//                            fontSize = 14.sp,
+//                            color = Color.Gray
+//                        )
                     }
                 }
             }
 
-            // Số lượng
             item {
-                QuantitySelectorShopee(
-                    quantity = quantity,
-                    onQuantityChange = { quantity = it },
-                )
+                PromoSection()
             }
+
+            // Số lượng
+//            item {
+//                QuantitySelectorShopee(
+//                    quantity = quantity,
+//                    onQuantityChange = { quantity = it },
+//                )
+//            }
+
+            item {
+                // 🔹 Lọc sản phẩm cùng danh mục nhưng khác ID hiện tại
+                val relatedProducts = productViewModel.products.value
+                    .filter { it.category_id == product?.category_id && it.product_id != product?.product_id }
+                    .take(10)
+
+                // 🔹 Lọc ảnh chỉ thuộc các sản phẩm tương tự này
+                val relatedImages = imageViewModel.productImages.value.filter { img ->
+                    relatedProducts.any { it.product_id == img.product_id?.toInt() }
+                }
+
+                if (relatedProducts.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "Sản phẩm tương tự",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+                        )
+
+                        // 🔹 Hiển thị LazyRow sản phẩm
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 12.dp)
+                                .overscroll(overscrollEffect = null)
+                        ) {
+                            items(relatedProducts) { related ->
+                                val imageUrl = relatedImages.find {
+                                    it.product_id?.toInt() == related.product_id && it.is_primary == 1
+                                }?.image_url
+
+                                ProductCard2(
+                                    product = related,
+                                    imageUrl = imageUrl,
+                                    specs = specViewModel.specs.value.filter { it.product_id == related.product_id },
+                                    onClick = {
+                                        navController.navigate("product/${related.product_id}")
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+            }
+
+
+
 
             Log.d("DescriptionHtml", "Description: ${product?.description ?: "null"}")
 
@@ -167,14 +249,17 @@ fun ProductDetailsScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProductImageSliderShopee(
     productName: String,
     variant: ProductVariant?,
-    images: List<ProductImage>
+    images: List<ProductImage>,
+    onBackClick: (() -> Unit)? = null
 ) {
     val allImages = buildList {
-        if (!variant?.image_url.isNullOrEmpty()) add(ProductImage(image_url = variant.image_url!!))
+        if (!variant?.image_url.isNullOrEmpty())
+            add(ProductImage(image_url = variant.image_url!!))
         addAll(images)
     }
 
@@ -182,32 +267,110 @@ fun ProductImageSliderShopee(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
-                .background(Color.LightGray),
+                .height(260.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFE0E0E0)),
             contentAlignment = Alignment.Center
         ) {
-            Text("Không có ảnh sản phẩm", color = Color.White)
+            Text(
+                text = "Không có ảnh sản phẩm",
+                color = Color.DarkGray,
+                fontStyle = FontStyle.Italic
+            )
         }
-    } else {
-        LazyRow(
+        return
+    }
+
+    val pagerState = rememberPagerState { allImages.size }
+
+    // Auto scroll mỗi 4 giây
+    LaunchedEffect(pagerState) {
+        while (true) {
+            delay(4000)
+            val nextPage = (pagerState.currentPage + 1) % allImages.size
+            pagerState.animateScrollToPage(nextPage)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        // --- Ảnh trượt ---
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            pageSpacing = 8.dp
+        ) { page ->
+            AsyncImage(
+                model = allImages[page].image_url,
+                contentDescription = productName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+            )
+        }
+
+        // --- Nút Back ở góc trái trên ảnh ---
+        if (onBackClick != null) {
+            BackButton(
+                onClick = onBackClick,
+                backgroundColor = Color.Black.copy(alpha = 0.4f),
+                iconTint = Color.White,
+                size = 44,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(10.dp)
+            )
+        }
+
+        // --- Indicator dots (dưới giữa) ---
+        Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.Center
         ) {
-            items(allImages) { img ->
-                AsyncImage(
-                    model = img.image_url,
-                    contentDescription = productName,
-                    contentScale = ContentScale.Crop,
+            repeat(allImages.size) { index ->
+                val isSelected = pagerState.currentPage == index
+                Box(
                     modifier = Modifier
-                        .fillParentMaxWidth()
-                        .clip(RoundedCornerShape(0.dp))
+                        .padding(3.dp)
+                        .size(if (isSelected) 10.dp else 8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        )
+                        .animateContentSize()
                 )
             }
         }
+
+        // --- Số trang ảnh (x / tổng) ---
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(10.dp)
+                .clip(RoundedCornerShape(50.dp))
+                .background(Color.Black.copy(alpha = 0.5f))
+                .padding(horizontal = 10.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = "${pagerState.currentPage + 1} / ${allImages.size}",
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
+
 
 @Composable
 fun PriceDisplayShopee(basePrice: Double, variant: ProductVariant) {
@@ -268,35 +431,6 @@ fun QuantitySelectorShopee(quantity: Int, onQuantityChange: (Int) -> Unit) {
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.size(32.dp)
             ) { Text("+") }
-        }
-    }
-}
-
-@Composable
-fun BottomBarShopee(
-    onChat: () -> Unit,
-    onAddToCart: () -> Unit,
-    onBuyNow: () -> Unit
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onChat, modifier = Modifier.weight(0.5f)) {
-            Icon(Icons.Default.Chat, contentDescription = "Chat ngay", tint = Color.Red)
-        }
-        IconButton(onClick = onAddToCart, modifier = Modifier.weight(0.5f)) {
-            Icon(Icons.Default.ShoppingCart, contentDescription = "Thêm giỏ hàng", tint = Color.Red)
-        }
-        Button(
-            onClick = onBuyNow,
-            modifier = Modifier.weight(2f),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-        ) {
-            Text("Mua ngay", fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
@@ -374,18 +508,69 @@ fun DescriptionHtml(htmlContent: String) {
 
 
 @Composable
-fun SpecTable(specs: List<ProductSpecification>) {
+fun SpecTable(
+    specs: List<ProductSpecification>,
+    modifier: Modifier = Modifier
+) {
     if (specs.isEmpty()) {
-        Text("Chưa có thông số kỹ thuật", Modifier.padding(12.dp).fillMaxWidth())
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Chưa có thông số kỹ thuật",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Gray,
+                    fontStyle = FontStyle.Italic
+                )
+            )
+        }
     } else {
-        Column(Modifier.padding(12.dp)) {
-            specs.forEach {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(it.spec_name, fontWeight = FontWeight.SemiBold)
-                    Text(it.spec_value)
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White)
+                .padding(vertical = 8.dp)
+        ) {
+            specs.forEachIndexed { index, spec ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = spec.spec_name,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = spec.spec_value,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-                Divider()
+
+                if (index < specs.lastIndex) {
+                    Divider(
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                        thickness = 0.6.dp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
             }
         }
     }
 }
+

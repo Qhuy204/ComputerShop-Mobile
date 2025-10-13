@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class UserViewModel : ViewModel() {
+    // Khởi tạo Repository để giao tiếp với tầng dữ liệu (bao gồm cả Firestore)
     private val repository = UserRepository(UserDaoImpl())
 
     private val _users = MutableStateFlow<List<User>>(emptyList())
@@ -24,7 +25,7 @@ class UserViewModel : ViewModel() {
         }
     }
 
-    fun loadUser(id: Int) {
+    fun loadUser(id: String) {
         viewModelScope.launch {
             _currentUser.value = repository.getUser(id)
         }
@@ -37,14 +38,19 @@ class UserViewModel : ViewModel() {
         }
     }
 
+
     fun updateUser(user: User) {
         viewModelScope.launch {
             repository.updateUser(user)
+            // Nếu bạn muốn người dùng hiện tại được cập nhật ngay lập tức
+            // thì cần có một cơ chế lắng nghe real-time trong repository,
+            // hoặc gọi lại loadUser nếu repository không tự động update
             loadAllUsers()
         }
     }
 
-    fun deleteUser(id: Int) {
+
+    fun deleteUser(id: String) {
         viewModelScope.launch {
             repository.deleteUser(id)
             loadAllUsers()

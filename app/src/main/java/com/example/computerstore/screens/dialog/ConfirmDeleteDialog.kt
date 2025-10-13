@@ -24,50 +24,40 @@ import androidx.compose.ui.window.Dialog
 
 @Composable
 fun ConfirmDeleteDialog(
-    show: Boolean,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    if (show) {
-        Dialog(onDismissRequest = onDismiss) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color.LightGray)
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White,
+            border = BorderStroke(1.dp, Color.LightGray)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .width(300.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .width(IntrinsicSize.Min)
+                Text(
+                    text = "Xác nhận",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Bạn chắc chắn muốn bỏ sản phẩm này?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Xác nhận",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    Text(
-                        text = "Bạn chắc chắn muốn bỏ sản phẩm này?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.End,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Không")
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = {
-                            onConfirm()
-                            onDismiss()
-                        }) {
-                            Text("Đồng ý", color = Color.Red)
-                        }
+                    TextButton(onClick = onDismiss) {
+                        Text("Không")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = onConfirm) {
+                        Text("Đồng ý", color = Color.Red)
                     }
                 }
             }

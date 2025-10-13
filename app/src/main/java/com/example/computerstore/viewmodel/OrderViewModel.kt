@@ -24,6 +24,13 @@ class OrderViewModel : ViewModel() {
         }
     }
 
+    // ✅ Chỉ lấy đơn hàng theo UID hiện tại
+    fun loadOrdersByUser(userId: String) {
+        viewModelScope.launch {
+            _orders.value = repository.getOrders().filter { it.user_id == userId }
+        }
+    }
+
     fun loadOrder(id: String) {
         viewModelScope.launch {
             _currentOrder.value = repository.getOrder(id)

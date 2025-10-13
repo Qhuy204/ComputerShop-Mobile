@@ -67,6 +67,8 @@ fun HomeScreen(
     categoryViewMoel: CategoryViewModel = viewModel()
 ) {
     val user = FirebaseAuth.getInstance().currentUser
+    Log.d("Profile", "Auth Status: UID $user is available. Starting data load.")
+
     val products by productViewModel.products.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -105,11 +107,6 @@ fun HomeScreen(
                     navController = navController
                 )
             }
-//            item {
-//                BannerSection1(
-//                    onCheckNowClick = { /* TODO: navigate to promotion */ }
-//                )
-//            }
 
             // Multi Banner
             item {
@@ -131,7 +128,6 @@ fun HomeScreen(
                     ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
                     ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
                     ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
-
                     )
 
                 ViewedProductsSection(
@@ -187,8 +183,6 @@ fun HomeScreen(
                         HorizontalItem("SOUNARC", "https://logo.clearbit.com/sounarc.com"),
                         HorizontalItem("PNY", "https://logo.clearbit.com/pny.com")
                     )
-
-
                     ItemList(title = stringResource(R.string.brand), items = brands) { clicked ->
                         println("Clicked: ${clicked.name}")
                         // hoặc navController.navigate("brand/${clicked.name}")

@@ -18,6 +18,12 @@ class UserAddressViewModel : ViewModel() {
     private val _currentUserAddress = MutableStateFlow<UserAddress?>(null)
     val currentUserAddress: StateFlow<UserAddress?> = _currentUserAddress
 
+    fun loadAddressesByUser(userId: String) {
+        viewModelScope.launch {
+            _userAddresses.value = repository.getUserAddresses().filter { it.user_id?.toString() == userId }
+        }
+    }
+
     fun loadAllUserAddresses() {
         viewModelScope.launch {
             _userAddresses.value = repository.getUserAddresses()

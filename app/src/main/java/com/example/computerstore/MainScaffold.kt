@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.computerstore.navigation.BottomBar
@@ -23,18 +24,23 @@ import com.example.computerstore.screens.OrderSuccessScreen
 import com.example.computerstore.screens.ProductDetailsScreen
 import com.example.computerstore.screens.ProfileScreen
 
-
 @Composable
 fun MainScaffold(onLogout: () -> Unit) {
     val navController = rememberNavController()
     val homeListState = rememberLazyListState()
 
-    // Debug log
-    Log.d("MainScaffold", "Start destination: ${BottomBarScreen.Home.route}")
+    val navBackStackEntry = navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry.value?.destination?.route
+
+    // Các màn không hiển thị BottomBar
+    val hideBottomBarRoutes = listOf("checkout", "order_success")
 
     Scaffold(
         bottomBar = {
-            BottomBar(navController = navController)
+            // Ẩn BottomBar ở các màn có prefix này
+            if (hideBottomBarRoutes.none { currentRoute?.startsWith(it) == true }) {
+                BottomBar(navController = navController)
+            }
         }
     ) { innerPadding ->
         NavHost(
@@ -52,14 +58,12 @@ fun MainScaffold(onLogout: () -> Unit) {
 
             composable("product/{productId}") { backStackEntry ->
                 val productId = backStackEntry.arguments?.getString("productId")?.toIntOrNull() ?: 0
-
                 ProductDetailsScreen(
                     productId = productId,
                     navController = navController,
+                    onBackClick = { navController.popBackStack() }
                 )
             }
-
-
 
             composable(BottomBarScreen.News.route) {
                 NewsScreen(
@@ -72,11 +76,7 @@ fun MainScaffold(onLogout: () -> Unit) {
 
             composable(
                 route = "newsDetails/{blogId}",
-                arguments = listOf(
-                    navArgument("blogId") {
-                        type = NavType.IntType
-                    }
-                )
+                arguments = listOf(navArgument("blogId") { type = NavType.IntType })
             ) { backStackEntry ->
                 val blogId = backStackEntry.arguments?.getInt("blogId") ?: 0
                 NewsDetailsScreen(
@@ -94,11 +94,20 @@ fun MainScaffold(onLogout: () -> Unit) {
                 )
             }
 
+            composable(
+                route = "checkout/{selectedIds}",
+                arguments = listOf(navArgument("selectedIds") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val selectedIdsArg = backStackEntry.arguments?.getString("selectedIds") ?: ""
+                val selectedCartIds = selectedIdsArg.split(",").filter { it.isNotBlank() }
 
-            composable("checkout") {
                 CheckoutScreen(
+                    navController = navController,
+                    selectedCartIds = selectedCartIds,
                     onOrderPlaced = { orderId ->
-                        navController.navigate("order_success/$orderId")
+                        navController.navigate("order_success/$orderId") {
+                            popUpTo("cart") { inclusive = true }
+                        }
                     }
                 )
             }
@@ -113,44 +122,18 @@ fun MainScaffold(onLogout: () -> Unit) {
             }
 
             composable(BottomBarScreen.Profile.route) {
-                ProfileScreen(
-                    onLogout = {
-                        onLogout()
-                    }
-                )
-            }
-
-            composable("productDetails/{productId}") { backStackEntry ->
-                val productId = backStackEntry.arguments?.getString("productId")?.toInt()
-                productId?.let {
-                    ProductDetailsScreen(
-                        productId = it,
-                        navController = navController
-                    )
-                }
+                ProfileScreen(onLogout = { onLogout() })
             }
 
             composable(BottomBarScreen.Category.route) {
-                // Trang danh sách Category
-                CategoryScreen(
-                    navController = navController,
-                    categoryId = 0,
-                    categoryName = "Danh mục"
-                )
+                CategoryScreen(navController = navController, categoryId = 0, categoryName = "Danh mục")
             }
-
 
             composable("category/{categoryId}/{categoryName}") { backStackEntry ->
                 val categoryId = backStackEntry.arguments?.getString("categoryId")?.toInt() ?: 0
                 val categoryName = backStackEntry.arguments?.getString("categoryName") ?: "Danh mục"
-                CategoryScreen(
-                    navController = navController,
-                    categoryId = categoryId,
-                    categoryName = categoryName
-                )
+                CategoryScreen(navController = navController, categoryId = categoryId, categoryName = categoryName)
             }
-
-
         }
     }
 }

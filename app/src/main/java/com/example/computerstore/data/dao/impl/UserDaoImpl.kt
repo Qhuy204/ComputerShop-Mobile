@@ -15,7 +15,7 @@ class UserDaoImpl : UserDao {
         return snapshot.documents.mapNotNull { it.toObject(User::class.java) }
     }
 
-    override suspend fun getById(id: Int): User? {
+    override suspend fun getById(id: String): User? {
         val doc = collection.document(id.toString()).get().await()
         return doc.toObject(User::class.java)
     }
@@ -28,7 +28,7 @@ class UserDaoImpl : UserDao {
         collection.document(user.user_id.toString()).set(user).await()
     }
 
-    override suspend fun delete(id: Int) {
+    override suspend fun delete(id: String) {
         collection.document(id.toString()).delete().await()
     }
 }
