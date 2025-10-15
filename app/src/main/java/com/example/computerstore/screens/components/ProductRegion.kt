@@ -1,6 +1,8 @@
 package com.example.computerstore.screens
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -24,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.computerstore.R
+import com.example.computerstore.SettingLoader
 import com.example.computerstore.data.model.Product
 import com.example.computerstore.data.model.ProductSpecification
 import com.example.computerstore.viewmodel.CartViewModel
@@ -31,6 +35,7 @@ import com.example.computerstore.viewmodel.ProductImageViewModel
 import com.example.computerstore.viewmodel.ProductSpecificationViewModel
 import com.example.computerstore.viewmodel.ProductVariantViewModel
 import com.example.computerstore.viewmodel.ProductViewModel
+import com.google.gson.Gson
 
 // map spec_name -> icon drawable
 val specIconsByName = mapOf(
@@ -48,6 +53,7 @@ val specIconsByName = mapOf(
     "Tần số quét" to R.drawable.refresh
 )
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun ProductRegion(
     title: String,
@@ -107,12 +113,57 @@ fun ProductRegion(
                         it.product_id?.toInt() == product.product_id && it.is_primary == 1
                     }?.image_url
 
+                    val context = LocalContext.current
+                    val gson = remember { Gson() }
+
                     ProductCard2(
                         product = product,
                         imageUrl = imageUrl,
                         specs = specs.filter { it.product_id == product.product_id },
-                        onClick = { onProductClick(product) }
+                        onClick = {
+                            // ✅ 1. Tạo object lưu cả sản phẩm + ảnh
+                            val viewedProduct = mapOf(
+                                "product" to product,
+                                "imageUrl" to (imageUrl ?: "https://via.placeholder.com/150")
+                            )
+
+                            // ✅ 2. Lấy danh sách cũ
+                            val existingJson = SettingLoader.getString(context, "recent_products")
+                            val type = object : com.google.gson.reflect.TypeToken<MutableList<Map<String, Any>>>() {}.type
+                            val history: MutableList<Map<String, Any>> =
+                                if (existingJson != null) gson.fromJson(existingJson, type) else mutableListOf()
+
+                            // ✅ 3. Xử lý trùng lặp (so sánh ID bất kể kiểu dữ liệu)
+                            history.removeAll { map ->
+                                val productMap = map["product"] as? Map<*, *> ?: return@removeAll false
+                                val storedId = when (val id = productMap["product_id"]) {
+                                    is Double -> id.toInt()
+                                    is Long -> id.toInt()
+                                    is Int -> id
+                                    else -> null
+                                }
+                                storedId == product.product_id
+                            }
+
+                            // ✅ 4. Thêm mới đầu danh sách
+                            history.add(0, viewedProduct)
+
+                            // ✅ 5. Giới hạn 10 phần tử
+                            if (history.size > 10) history.removeLast()
+
+                            // ✅ 6. Lưu lại vào local
+                            SettingLoader.saveString(context, "recent_products", gson.toJson(history))
+
+                            // ✅ 7. Lưu sản phẩm cuối cùng riêng
+                            SettingLoader.saveObject(context, "last_clicked_product", viewedProduct)
+
+                            // ✅ 8. Điều hướng sang chi tiết
+                            onProductClick(product)
+                        }
                     )
+
+
+
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))

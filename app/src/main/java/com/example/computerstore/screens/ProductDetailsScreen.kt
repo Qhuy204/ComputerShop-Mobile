@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -46,6 +47,7 @@ import com.example.computerstore.viewmodel.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,13 +68,15 @@ fun ProductDetailsScreen(
     val specs by specViewModel.specs.collectAsState()
     val images by imageViewModel.productImages.collectAsState()
 
-    val selectedVariant = variants.firstOrNull { it.is_default == 1 } ?: variants.firstOrNull()
+    // biến thể mặc định
+    val defaultVariant = variants.firstOrNull { it.is_default == 1 } ?: variants.firstOrNull()
+    var selectedVariant by remember { mutableStateOf(defaultVariant) }
     var quantity by remember { mutableStateOf(1) }
 
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid.toString()
 
-    // Load dữ liệu
+    // Load dữ liệu khi mở màn
     LaunchedEffect(productId) {
         productViewModel.loadProduct(productId)
         variantViewModel.loadVariantsByProduct(productId)
@@ -83,11 +87,13 @@ fun ProductDetailsScreen(
         categoryViewMoel.loadAllCategories()
     }
 
-    Log.d("ProductDetailsScreen", "Product: $product")
-    Log.d("ProductDetailsScreen", "Variant: $selectedVariant")
-    Log.d("ProductDetailsScreen", "Specs: $specs")
-    Log.d("ProductDetailsScreen", "Images: $images")
-    Log.d("ProductDetailsScreen", "UserID: $userId")
+    Log.d("ProductDetailsScreen", "🟢 Product: $product")
+    Log.d("ProductDetailsScreen", "🟢 Variant: $selectedVariant")
+    Log.d("ProductDetailsScreen", "🟢 Specs: $specs")
+    Log.d("ProductDetailsScreen", "🟢 Images: $images")
+    Log.d("ProductDetailsScreen", "🟢 UserID: $userId")
+
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         bottomBar = {
@@ -95,13 +101,32 @@ fun ProductDetailsScreen(
                 onChat = { /* TODO mở chat */ },
                 onAddToCart = {
                     if (product != null && selectedVariant != null) {
-                        cartViewModel.addCart(product!!, selectedVariant, quantity, userId = userId)
+                        scope.launch {
+                            cartViewModel.addOrUpdateCart(
+                                product = product!!,
+                                variant = selectedVariant!!,
+                                quantity = quantity,
+                                userId = userId
+                            )
+                        }
                     }
                 },
                 onBuyNow = {
                     if (product != null && selectedVariant != null) {
-                        cartViewModel.addCart(product!!, selectedVariant, quantity, userId = userId)
-                        navController.navigate("checkout")
+                        scope.launch {
+                            val addedCartId = cartViewModel.addOrUpdateCart(
+                                product = product!!,
+                                variant = selectedVariant!!,
+                                quantity = quantity,
+                                userId = userId
+                            )
+                            // ✅ Tick sản phẩm vừa thêm
+                            cartViewModel.selectCartItem(addedCartId)
+                            // ✅ Điều hướng sang màn giỏ hàng
+                            navController.navigate("cart") {
+                                launchSingleTop = true
+                            }
+                        }
                     }
                 }
             )
@@ -110,11 +135,12 @@ fun ProductDetailsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White),
+                .background(Color.White)
+                .padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-            // Ảnh sản phẩm
+            // --- Ảnh sản phẩm ---
             item {
                 val filteredImages = images.filter { it.product_id?.toInt() == productId }
 
@@ -126,8 +152,7 @@ fun ProductDetailsScreen(
                 )
             }
 
-
-            // Tên + Giá
+            // --- Tên + Giá ---
             item {
                 Column(
                     Modifier
@@ -135,39 +160,95 @@ fun ProductDetailsScreen(
                         .background(Color.White)
                         .padding(12.dp)
                 ) {
-                    Text(product?.product_name ?: "", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = product?.product_name ?: "",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                     Spacer(Modifier.height(8.dp))
 
                     if (product != null && selectedVariant != null) {
-                        PriceDisplayShopee(product!!.base_price.toDouble(), selectedVariant)
+                        PriceDisplayShopee(product!!.base_price.toDouble(), selectedVariant!!)
+                    }
+                }
+            }
+
+            // --- Danh sách biến thể (Variants) ---
+            item {
+                if (variants.isNotEmpty()) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "Phiên bản / Dung lượng:",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.Black
+                        )
+                        Spacer(Modifier.height(8.dp))
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(variants) { variant ->
+                                val isSelected = variant.variant_id == selectedVariant?.variant_id
+
+                                Box(
+                                    modifier = Modifier
+                                        .border(
+                                            width = if (isSelected) 2.dp else 1.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.4f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isSelected) Color(0xFFE3F2FD) else Color.White)
+                                        .clickable { selectedVariant = variant }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = variant.variant_sku ?: "Phiên bản ${variant.variant_id}",
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Black,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 13.sp
+                                        )
+                                        if (variant.price_adjustment != null) {
+                                            Text(
+                                                text = "${"%,.0f".format(product?.base_price?.plus(variant.price_adjustment ?: 0.0) ?: 0.0)} đ",
+                                                fontSize = 12.sp,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+//                        Spacer(Modifier.height(8.dp))
 //                        Text(
-//                            text = "Kho: ${selectedVariant.stock_quantity ?: 0}",
-//                            fontSize = 14.sp,
+//                            text = "Kho: ${selectedVariant?.stock_quantity ?: 0} sản phẩm",
+//                            fontSize = 13.sp,
 //                            color = Color.Gray
 //                        )
                     }
                 }
             }
 
+            // --- Khuyến mãi ---
             item {
                 PromoSection()
             }
 
-            // Số lượng
-//            item {
-//                QuantitySelectorShopee(
-//                    quantity = quantity,
-//                    onQuantityChange = { quantity = it },
-//                )
-//            }
-
+            // --- Sản phẩm tương tự ---
             item {
-                // 🔹 Lọc sản phẩm cùng danh mục nhưng khác ID hiện tại
                 val relatedProducts = productViewModel.products.value
                     .filter { it.category_id == product?.category_id && it.product_id != product?.product_id }
                     .take(10)
 
-                // 🔹 Lọc ảnh chỉ thuộc các sản phẩm tương tự này
                 val relatedImages = imageViewModel.productImages.value.filter { img ->
                     relatedProducts.any { it.product_id == img.product_id?.toInt() }
                 }
@@ -187,7 +268,6 @@ fun ProductDetailsScreen(
                             modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
                         )
 
-                        // 🔹 Hiển thị LazyRow sản phẩm
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier
@@ -210,18 +290,12 @@ fun ProductDetailsScreen(
                                 )
                             }
                         }
-
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
             }
 
-
-
-
-            Log.d("DescriptionHtml", "Description: ${product?.description ?: "null"}")
-
-            // Mô tả
+            // --- Mô tả sản phẩm ---
             item {
                 Column(
                     Modifier
@@ -234,7 +308,7 @@ fun ProductDetailsScreen(
                 }
             }
 
-            // Thông số kỹ thuật
+            // --- Thông số kỹ thuật ---
             item {
                 Column(
                     Modifier
@@ -248,6 +322,7 @@ fun ProductDetailsScreen(
         }
     }
 }
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

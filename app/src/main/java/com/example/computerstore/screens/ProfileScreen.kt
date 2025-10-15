@@ -3,6 +3,7 @@ package com.example.computerstore.screens
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -52,8 +53,7 @@ fun ProfileScreen(
     addressViewModel: UserAddressViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
     onLogout: () -> Unit = {},
-    // Thêm callback điều hướng đến màn hình chỉnh sửa hồ sơ
-    onNavigateToEditProfile: () -> Unit = {}
+    navController: androidx.navigation.NavController // 🔹 thêm navController
 ) {
     val authUser = FirebaseAuth.getInstance().currentUser
     val uid = authUser?.uid
@@ -62,178 +62,155 @@ fun ProfileScreen(
     val orders by orderViewModel.orders.collectAsState()
     val addresses by addressViewModel.userAddresses.collectAsState()
 
-    // 1. Logic tải dữ liệu và Log trạng thái Auth/UID
-    // Đã loại bỏ DisposableEffect(Unit) và tích hợp log vào LaunchedEffect(uid) để phản ứng với thay đổi UID
     LaunchedEffect(uid) {
         if (uid != null) {
-            // Log khi UID đã có và bắt đầu tải dữ liệu
-            Log.d("Profile", "Auth Status: UID $uid is available. Starting data load.")
             userViewModel.loadUser(uid)
             orderViewModel.loadOrdersByUser(uid)
             addressViewModel.loadAddressesByUser(uid)
-        } else {
-            // Log khi UID là null, có thể do chưa đăng nhập hoặc trạng thái đang chờ
-            Log.w("Profile", "Auth Status: UID is null. Cannot load user data.")
         }
     }
 
-    // 2. Log thông tin người dùng mỗi khi dữ liệu được tải hoặc cập nhật
-    LaunchedEffect(user) {
-        if (user != null) {
-            Log.d("Profile", "--- User Data Loaded ---")
-            Log.d("Profile", "User ID: ${user!!.user_id}")
-            Log.d("Profile", "Full Name: ${user!!.full_name}")
-            Log.d("Profile", "Email: ${user!!.email}")
-            Log.d("Profile", "Phone Number: ${user!!.phone_number}")
-            Log.d("Profile", "Gender: ${user!!.gender}")
-            Log.d("Profile", "Birthday: ${user!!.birthday}")
-            Log.d("Profile", "Registration Date: ${user!!.registration_date}")
-            Log.d("Profile", "--------------------------")
-        } else if (uid != null) {
-            Log.d("Profile", "User Load Status: Waiting for user data or data is null for UID: $uid")
-        }
-    }
-
-    Box(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(WhiteBg)
+            .padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 80.dp, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header với avatar và tên
+        // Header
+        item {
+            user?.let { ProfileHeader(it) } ?: DefaultProfilePlaceholder()
+        }
+
+        if (user != null) {
+            // Tóm tắt
             item {
-                user?.let {
-                    ProfileHeader(it)
-                } ?: run {
-                    DefaultProfilePlaceholder()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(Icons.Default.ShoppingBag, "${orders.size}", "Đơn hàng", Modifier.weight(1f))
+                    StatCard(Icons.Default.LocationOn, "${addresses.size}", "Địa chỉ", Modifier.weight(1f))
                 }
             }
 
-            // --- Nội dung chính chỉ hiển thị khi có dữ liệu User ---
-            if (user != null) {
-                // Stats Cards
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        StatCard(
-                            icon = Icons.Default.ShoppingBag,
-                            value = "${orders.size}",
-                            label = "Đơn hàng",
-                            modifier = Modifier.weight(1f)
-                        )
-                        StatCard(
-                            icon = Icons.Default.LocationOn,
-                            value = "${addresses.size}",
-                            label = "Địa chỉ",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+            // Mục hành động nhanh
+            item {
+                QuickActionSection(
+                    onEditProfile = { navController.navigate("edit_profile") },
+                    onManageAddress = { navController.navigate("address_manager") },
+                    onViewOrders = { navController.navigate("order_history") }
+                )
+            }
 
-                // Thông tin cá nhân
-                item {
-                    SectionHeaderWithAction(
-                        title = "Thông tin cá nhân",
-                        icon = Icons.Default.Person,
-                        actionIcon = Icons.Default.Edit,
-                        onActionClick = onNavigateToEditProfile // Gán callback điều hướng
-                    )
-                }
+            // Thông tin cá nhân
+            item {
+                SectionHeaderWithAction(
+                    title = "Thông tin cá nhân",
+                    icon = Icons.Default.Person,
+                    actionIcon = Icons.Default.Edit,
+                    onActionClick = { navController.navigate("edit_profile") }
+                )
+            }
 
-                item {
-                    user?.let { ProfileInfo(it) }
-                }
+            item { ProfileInfo(user!!) }
 
-                // Địa chỉ giao hàng
-                item {
-                    SectionHeaderWithAction(
-                        title = "Địa chỉ giao hàng",
-                        icon = Icons.Default.LocationOn,
-                        actionIcon = Icons.Default.Add,
-                        onActionClick = {
-                            // TODO: Triển khai navigation đến AddNewAddressScreen (Chức năng thêm địa chỉ)
-                            Log.d(TAG, "Navigate to Add New Address Screen clicked.")
-                        }
-                    )
-                }
+            // Địa chỉ giao hàng
+            item {
+                SectionHeaderWithAction(
+                    title = "Địa chỉ giao hàng",
+                    icon = Icons.Default.LocationOn,
+                    actionIcon = Icons.Default.Add,
+                    onActionClick = { navController.navigate("address_manager") }
+                )
+            }
 
-                if (addresses.isEmpty()) {
-                    item {
-                        EmptyState(
-                            icon = Icons.Default.LocationOn,
-                            message = "Chưa có địa chỉ nào được lưu"
-                        )
-                    }
-                } else {
-                    items(addresses) { addr -> AddressCardProfile(addr) }
-                }
-
-                // Đơn hàng
-                item {
-                    SectionHeader(title = "Lịch sử đơn hàng", icon = Icons.Default.ShoppingBag)
-                }
-
-                if (orders.isEmpty()) {
-                    item {
-                        EmptyState(
-                            icon = Icons.Default.ShoppingBag,
-                            message = "Bạn chưa có đơn hàng nào"
-                        )
-                    }
-                } else {
-                    items(orders.sortedByDescending { it.order_date }) { order ->
-                        OrderCard(order)
-                    }
-                }
+            if (addresses.isEmpty()) {
+                item { EmptyState(Icons.Default.LocationOn, "Chưa có địa chỉ nào") }
             } else {
-                // Hiển thị loading cho các phần còn lại nếu user vẫn là null
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        CircularProgressIndicator(color = RedPrimary)
-                    }
+                items(addresses) { addr -> AddressCardProfile(addr) }
+            }
+
+            // Lịch sử đơn hàng
+            item { SectionHeader("Lịch sử đơn hàng", Icons.Default.ShoppingBag) }
+
+            if (orders.isEmpty()) {
+                item { EmptyState(Icons.Default.ShoppingBag, "Bạn chưa có đơn hàng nào") }
+            } else {
+                items(orders.sortedByDescending { it.order_date }) { order ->
+                    OrderCard(order)
+                }
+            }
+
+            // Đăng xuất
+            item {
+                Button(
+                    onClick = {
+                        FirebaseAuth.getInstance().signOut()
+                        onLogout()
+                        navController.navigate("login") { popUpTo(0) } // Đưa về màn login
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
+                    shape = RoundedCornerShape(28.dp)
+                ) {
+                    Icon(Icons.Default.ExitToApp, contentDescription = null, tint = WhiteBg)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Đăng xuất", color = WhiteBg, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        } else {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = RedPrimary)
                 }
             }
         }
+    }
+}
 
-        // Floating Logout Button
-        Button(
-            onClick = {
-                FirebaseAuth.getInstance().signOut()
-                onLogout()
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp)
-                .height(56.dp)
-                .shadow(8.dp, RoundedCornerShape(28.dp)),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = RedPrimary
-            ),
-            shape = RoundedCornerShape(28.dp)
-        ) {
-            Icon(Icons.Default.ExitToApp, contentDescription = null, tint = WhiteBg)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "Đăng xuất",
-                color = WhiteBg,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+// 🔹 Cập nhật lại QuickActionSection
+@Composable
+fun QuickActionSection(
+    onEditProfile: () -> Unit,
+    onManageAddress: () -> Unit,
+    onViewOrders: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(WhiteCard, RoundedCornerShape(16.dp))
+            .border(1.dp, GrayLight, RoundedCornerShape(16.dp))
+            .padding(12.dp)
+    ) {
+        QuickActionItem(Icons.Default.Person, "Cập nhật thông tin", onEditProfile)
+        QuickActionItem(Icons.Default.Home, "Quản lý địa chỉ", onManageAddress)
+        QuickActionItem(Icons.Default.List, "Xem lịch sử đơn hàng", onViewOrders)
+    }
+}
+
+
+@Composable
+fun QuickActionItem(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = RedPrimary, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = BlackText)
     }
 }
 

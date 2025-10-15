@@ -1,6 +1,8 @@
 package com.example.computerstore.screens
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -50,13 +52,16 @@ import com.example.computerstore.viewmodel.ProductViewModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.res.stringResource
 import com.example.computerstore.R
+import com.example.computerstore.SettingLoader
 import com.example.computerstore.screens.components.CategoryList
 import com.example.computerstore.screens.components.NewsList
 import com.example.computerstore.viewmodel.CategoryViewModel
 import com.example.computerstore.viewmodel.BlogViewModel
 import com.example.computerstore.data.model.Blog
 import com.example.computerstore.screens.components.Footer
+import com.google.gson.Gson
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun HomeScreen(
     onLogout: () -> Unit,
@@ -76,6 +81,21 @@ fun HomeScreen(
     val category by categoryViewMoel.categories.collectAsState()
     val blogViewModel: BlogViewModel = viewModel()
     val blogs by blogViewModel.blogs.collectAsState()
+
+    val gson = remember { Gson() }
+    val context = LocalContext.current
+
+    val recentJson = SettingLoader.getString(context, "recent_products")
+
+    val recentProducts = remember(recentJson) {
+        if (recentJson != null) {
+            val type = object : com.google.gson.reflect.TypeToken<List<Map<String, Any>>>() {}.type
+            gson.fromJson<List<Map<String, Any>>>(recentJson, type)
+        } else emptyList()
+    }
+
+
+
 
     LaunchedEffect(Unit) {
         productViewModel.loadAllProducts()
@@ -101,9 +121,9 @@ fun HomeScreen(
             // Header (search bar + user button)
             item {
                 HeaderSection(
-                    searchQuery = "",
-                    onSearchChange = {},
-                    focusManager = LocalFocusManager.current,
+                    searchQuery = searchQuery,
+                    onSearchChange = { searchQuery = it },
+                    focusManager = focusManager,
                     navController = navController
                 )
             }
@@ -121,24 +141,79 @@ fun HomeScreen(
                 }
             }
 
-            item{
-                val viewedProducts = listOf(
-                    ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
-                    ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
-                    ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
-                    ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
-                    ViewedProduct("PC Gaming i9 + RTX 4090", "https://pcmarket.vn/media/product/250_11929_msi_geforce_rtx_5090_32g_gaming.jpg", "70.000.000đ", "65.000.000đ", "7%"),
+            item {
+                val viewedProducts = recentProducts.mapNotNull {
+                    val productMap = it["product"] as? Map<*, *> ?: return@mapNotNull null
+                    val name = productMap["product_name"]?.toString() ?: "Unknown"
+                    val basePrice = (productMap["base_price"] as? Double) ?: 0.0
+                    val imageUrl = it["imageUrl"]?.toString() ?: "https://via.placeholder.com/150"
+
+                    ViewedProduct(
+                        name = name,
+                        imageUrl = imageUrl,
+                        oldPrice = "${"%,.0f".format(basePrice * 1.15)} đ",
+                        newPrice = "${"%,.0f".format(basePrice)} đ",
+                        discountPercent = "15%"
+                    )
+                }
+
+
+                if (viewedProducts.isNotEmpty()) {
+                    val context = LocalContext.current
+                    val gson = remember { Gson() }
+
+                    ViewedProductsSection(
+                        products = viewedProducts,
+                        onProductClick = { viewed ->
+                            // ✅ 1. Tìm lại sản phẩm thực trong recent_products để lấy product_id
+                            val recentJson = SettingLoader.getString(context, "recent_products")
+                            val type = object : com.google.gson.reflect.TypeToken<List<Map<String, Any>>>() {}.type
+                            val recent = gson.fromJson<List<Map<String, Any>>>(recentJson, type)
+
+                            val productMap = recent.find {
+                                val p = it["product"] as? Map<*, *> ?: return@find false
+                                p["product_name"] == viewed.name
+                            }?.get("product") as? Map<*, *>
+
+                            if (productMap != null) {
+                                val productId = when (val id = productMap["product_id"]) {
+                                    is Double -> id.toInt()
+                                    is Long -> id.toInt()
+                                    is Int -> id
+                                    else -> null
+                                }
+
+                                if (productId != null) {
+                                    // ✅ 2. Đưa sản phẩm đó lên đầu danh sách recent_products (làm mới)
+                                    val imageUrl = viewed.imageUrl
+                                    val productObj = mapOf("product" to productMap, "imageUrl" to imageUrl)
+
+                                    val mutableRecent = recent.toMutableList()
+                                    mutableRecent.removeAll {
+                                        val stored = (it["product"] as? Map<*, *>)?.get("product_id")
+                                        when (stored) {
+                                            is Double -> stored.toInt()
+                                            is Long -> stored.toInt()
+                                            is Int -> stored
+                                            else -> null
+                                        } == productId
+                                    }
+                                    mutableRecent.add(0, productObj)
+                                    if (mutableRecent.size > 10) mutableRecent.removeLast()
+
+                                    SettingLoader.saveString(context, "recent_products", gson.toJson(mutableRecent))
+                                    SettingLoader.saveObject(context, "last_clicked_product", productObj)
+
+                                    // ✅ 3. Điều hướng sang chi tiết sản phẩm
+                                    navController.navigate("product/$productId")
+                                }
+                            }
+                        }
                     )
 
-                ViewedProductsSection(
-                    products = viewedProducts,
-                    onProductClick = { product ->
-                        // Demo gọi function khi click
-                        Log.d("ProductClick", "Clicked: ${product.name}")
-                        // TODO: điều hướng sang ProductDetailScreen(product)
-                    }
-                )
+                }
             }
+
 
             item{
                 Spacer(modifier = Modifier.height(8.dp))
@@ -184,9 +259,10 @@ fun HomeScreen(
                         HorizontalItem("PNY", "https://logo.clearbit.com/pny.com")
                     )
                     ItemList(title = stringResource(R.string.brand), items = brands) { clicked ->
-                        println("Clicked: ${clicked.name}")
-                        // hoặc navController.navigate("brand/${clicked.name}")
+                        Log.d("Brand", "Clicked: ${clicked.name}")
+                        navController.navigate("brandDetail/${clicked.name}")
                     }
+
 
                 }
             }
@@ -244,7 +320,11 @@ fun HomeScreen(
                         items = items
                     ) { clicked ->
                         println("Clicked: ${clicked.name}")
-                        // navController.navigate("category/${clicked.name}")
+                        val clickedCategory = category.find { it.category_name == clicked.name }
+                        clickedCategory?.let {
+                            navController.navigate("categoryDetail/${it.category_id}/${it.category_name}")
+                        }
+
                     }
                 }
             }

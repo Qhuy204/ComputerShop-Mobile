@@ -16,8 +16,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
@@ -26,7 +24,6 @@ import com.example.computerstore.navigation.BottomBarScreen
 import com.example.computerstore.screens.buttons.CustomButton
 import com.example.computerstore.ui.components.CustomTextField
 
-
 @Composable
 fun HeaderSection(
     searchQuery: String,
@@ -34,8 +31,6 @@ fun HeaderSection(
     focusManager: FocusManager,
     navController: NavController
 ) {
-    val navController = rememberNavController()
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -43,6 +38,7 @@ fun HeaderSection(
             .background(Color(0xFFE30000))
             .padding(top = 22.dp, start = 16.dp, end = 16.dp)
     ) {
+        // Logo → quay lại Home
         Box(
             modifier = Modifier
                 .size(56.dp)
@@ -58,18 +54,18 @@ fun HeaderSection(
                     .data("https://file.hstatic.net/200000636033/file/logo-mobile_1e5b7fc485b24cf985b3d63cfa1f88be.svg")
                     .decoderFactory(SvgDecoder.Factory())
                     .build(),
-                contentDescription = "Profile",
+                contentDescription = "Logo",
                 modifier = Modifier.fillMaxSize()
             )
         }
 
-
         Spacer(modifier = Modifier.width(8.dp))
 
+        // ✅ Ô nhập tìm kiếm (có thể nhập text bình thường)
         CustomTextField(
             value = searchQuery,
             onValueChange = onSearchChange,
-            placeholder = "Search for a product",
+            placeholder = "Tìm kiếm sản phẩm...",
             iconRes = R.drawable.search,
             focusManager = focusManager,
             isLastField = true,
@@ -81,14 +77,15 @@ fun HeaderSection(
 
         Spacer(modifier = Modifier.width(10.dp))
 
+        // Nút tìm kiếm
         CustomButton(
             onClick = {
-                navController.navigate(BottomBarScreen.Profile.route) {
-                    launchSingleTop = true
-                    restoreState = true
+                if (searchQuery.isNotBlank()) {
+                    navController.navigate("search?query=${searchQuery}")
+                    focusManager.clearFocus()
                 }
             },
-            iconRes = R.drawable.ic_user,
+            iconRes = R.drawable.search,
             backgroundColor = Color.Black,
             iconTint = Color.White,
             size = 56.dp,
@@ -99,47 +96,5 @@ fun HeaderSection(
                     shape = RoundedCornerShape(30.dp)
                 )
         )
-
     }
 }
-
-//@Composable
-//fun BannerSection1(
-//    onCheckNowClick: () -> Unit = {}
-//) {
-//    Column(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .height(130.dp)
-//            .background(Color.Black)
-//            .padding(horizontal = 16.dp)
-//    ) {
-//        Text(
-//            text = "Power Up Your Next Upgrade",
-//            fontSize = 20.sp,
-//            fontWeight = FontWeight.Bold,
-//            color = Color.White
-//        )
-//
-//        Text(
-//            text = "Top gear, best performance, trusted by gamers.",
-//            fontSize = 16.sp,
-//            fontWeight = FontWeight.Normal,
-//            color = Color.LightGray
-//        )
-//
-//        Button(
-//            onClick = onCheckNowClick,
-//            modifier = Modifier
-//                .width(200.dp)
-//                .padding(top = 16.dp),
-//            shape = RoundedCornerShape(5.dp),
-//            colors = ButtonDefaults.buttonColors(
-//                containerColor = Color(0xFFE30000),
-//                contentColor = Color.White
-//            )
-//        ) {
-//            Text("Check Now", fontWeight = FontWeight.Bold)
-//        }
-//    }
-//}

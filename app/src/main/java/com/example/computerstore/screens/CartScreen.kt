@@ -39,9 +39,22 @@ fun CartScreen(
     val products by productViewModel.products.collectAsState()
     val variants by variantViewModel.productVariants.collectAsState()
     val images by imageViewModel.productImages.collectAsState()
+    val selectedCartItemId by cartViewModel.selectedCartItemId.collectAsState()
 
+    // ✅ Danh sách các ID được chọn
     val selectedIds = remember { mutableStateListOf<String>() }
 
+    // ✅ Tự động tick item được chọn khi “Buy Now”
+    LaunchedEffect(selectedCartItemId, carts) {
+        selectedIds.clear()
+        selectedCartItemId?.let { id ->
+            if (carts.any { it.cart_id == id }) {
+                selectedIds.add(id)
+            }
+        }
+    }
+
+    // ✅ Tính tổng tiền
     val totalPrice = carts.filter { selectedIds.contains(it.cart_id ?: "") }.sumOf { cart ->
         val product = products.find { it.product_id == cart.product_id }
         val variant = variants.find { it.variant_id == cart.variant_id }
@@ -49,6 +62,7 @@ fun CartScreen(
         price * cart.quantity
     }
 
+    // ✅ Load dữ liệu khi mở màn hình
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     LaunchedEffect(userId) {
         userId?.let { cartViewModel.loadCartsByUser(it) }
@@ -77,9 +91,10 @@ fun CartScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // --- Checkbox chọn tất cả ---
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CustomCheckbox(
-                            checked = selectedIds.size == carts.size,
+                            checked = selectedIds.size == carts.size && carts.isNotEmpty(),
                             onCheckedChange = { checked ->
                                 if (checked) {
                                     selectedIds.clear()
@@ -90,6 +105,8 @@ fun CartScreen(
                         Spacer(Modifier.width(8.dp))
                         Text("Tất cả")
                     }
+
+                    // --- Tổng tiền + Nút mua hàng ---
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "Tổng: ${"%,.0f".format(totalPrice)} đ",
@@ -109,19 +126,21 @@ fun CartScreen(
                         ) {
                             Text("Mua hàng (${selectedIds.size})", color = Color.White)
                         }
-
                     }
                 }
             }
         }
     ) { padding ->
         if (carts.isEmpty()) {
+            // --- Giỏ hàng trống ---
             Box(
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
-            ) { Text("Giỏ hàng trống") }
+            ) {
+                Text("Giỏ hàng trống")
+            }
         } else {
+            // --- Danh sách sản phẩm trong giỏ ---
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -153,7 +172,7 @@ fun CartScreen(
                         variants = variants,
                         images = images,
                         onItemClick = { productId ->
-                            navController.navigate("productDetails/$productId")
+                            navController.navigate("product/$productId")
                         }
                     )
                 }

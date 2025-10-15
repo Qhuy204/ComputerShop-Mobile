@@ -1,11 +1,14 @@
 package com.example.computerstore
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,7 +17,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.computerstore.navigation.BottomBar
 import com.example.computerstore.navigation.BottomBarScreen
+import com.example.computerstore.screens.BrandDetailScreen
 import com.example.computerstore.screens.CartScreen
+import com.example.computerstore.screens.CategoryDetailScreen
 import com.example.computerstore.screens.CategoryScreen
 import com.example.computerstore.screens.CheckoutScreen
 import com.example.computerstore.screens.HomeScreen
@@ -23,7 +28,15 @@ import com.example.computerstore.screens.NewsScreen
 import com.example.computerstore.screens.OrderSuccessScreen
 import com.example.computerstore.screens.ProductDetailsScreen
 import com.example.computerstore.screens.ProfileScreen
+import com.example.computerstore.screens.SearchResultScreen
+import com.example.computerstore.screens.EditProfileScreen
+import com.example.computerstore.screens.ManageAddressScreen
+import com.example.computerstore.screens.OrderHistoryScreen
+import com.example.computerstore.viewmodel.OrderViewModel
+import com.example.computerstore.viewmodel.UserAddressViewModel
+import com.example.computerstore.viewmodel.UserViewModel
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun MainScaffold(onLogout: () -> Unit) {
     val navController = rememberNavController()
@@ -122,8 +135,19 @@ fun MainScaffold(onLogout: () -> Unit) {
             }
 
             composable(BottomBarScreen.Profile.route) {
-                ProfileScreen(onLogout = { onLogout() })
+                val orderViewModel: OrderViewModel = viewModel()
+                val addressViewModel: UserAddressViewModel = viewModel()
+                val userViewModel: UserViewModel = viewModel()
+
+                ProfileScreen(
+                    onLogout = onLogout,
+                    orderViewModel = orderViewModel,
+                    addressViewModel = addressViewModel,
+                    userViewModel = userViewModel,
+                    navController = navController
+                )
             }
+
 
             composable(BottomBarScreen.Category.route) {
                 CategoryScreen(navController = navController, categoryId = 0, categoryName = "Danh mục")
@@ -134,6 +158,51 @@ fun MainScaffold(onLogout: () -> Unit) {
                 val categoryName = backStackEntry.arguments?.getString("categoryName") ?: "Danh mục"
                 CategoryScreen(navController = navController, categoryId = categoryId, categoryName = categoryName)
             }
+
+            // Search
+            composable("search?query={query}") { backStackEntry ->
+                val query = backStackEntry.arguments?.getString("query") ?: ""
+                SearchResultScreen(query = query, navController = navController)
+            }
+             // Category
+            composable(
+                route = "categoryDetail/{categoryId}/{categoryName}",
+                arguments = listOf(
+                    navArgument("categoryId") { type = NavType.IntType },
+                    navArgument("categoryName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val categoryId = backStackEntry.arguments?.getInt("categoryId") ?: 0
+                val categoryName = backStackEntry.arguments?.getString("categoryName") ?: "Danh mục"
+                CategoryDetailScreen(navController, categoryId, categoryName)
+            }
+
+            // Brand
+            composable(
+                route = "brandDetail/{brandName}",
+                arguments = listOf(
+                    navArgument("brandName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val brandName = backStackEntry.arguments?.getString("brandName") ?: ""
+                BrandDetailScreen(navController = navController, brandName = brandName)
+            }
+
+
+
+            composable("edit_profile") {
+                EditProfileScreen(navController = navController)
+            }
+
+            composable("manage_a    ddress") {
+                ManageAddressScreen(navController = navController)
+            }
+
+            composable("order_history") {
+                OrderHistoryScreen(navController = navController)
+            }
+
+
         }
     }
 }

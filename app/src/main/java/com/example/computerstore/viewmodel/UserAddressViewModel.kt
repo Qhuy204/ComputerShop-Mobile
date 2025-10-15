@@ -56,4 +56,12 @@ class UserAddressViewModel : ViewModel() {
             loadAllUserAddresses()
         }
     }
+
+    fun setDefaultAddress(addressId: Any?, userId: String) {
+        viewModelScope.launch {
+            repository.setDefaultAddress(addressId, userId)
+            loadAddressesByUser(userId)
+        }
+    }
+
 }
