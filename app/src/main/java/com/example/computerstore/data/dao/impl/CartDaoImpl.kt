@@ -19,9 +19,11 @@ class CartDaoImpl : CartDao {
         return doc.toObject(Cart::class.java)
     }
 
-    override suspend fun insert(cart: Cart) {
-        val docId: String = cart.cart_id?.takeIf { it.isNotEmpty() } ?: collection.document().id
-        collection.document(docId).set(cart.copy(cart_id = docId)).await()
+    override suspend fun insert(cart: Cart): String {
+        val docId = cart.cart_id?.takeIf { it.isNotEmpty() } ?: collection.document().id
+        val newCart = cart.copy(cart_id = docId)
+        collection.document(docId).set(newCart).await()
+        return docId
     }
 
 

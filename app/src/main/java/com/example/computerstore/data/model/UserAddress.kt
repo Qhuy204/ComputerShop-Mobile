@@ -3,8 +3,8 @@ package com.example.computerstore.data.model
 import com.google.firebase.firestore.PropertyName
 
 data class UserAddress(
-    @get:PropertyName("address_id") @set:PropertyName("address_id") var address_id: Any? = "",
-    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: Any? = "",
+    @get:PropertyName("address_id") @set:PropertyName("address_id") var address_id: String? = "",
+    @get:PropertyName("user_id") @set:PropertyName("user_id") var user_id: String? = "",
     @get:PropertyName("recipient_name") @set:PropertyName("recipient_name") var recipient_name: String = "",
     @get:PropertyName("phone_number") @set:PropertyName("phone_number") var phone_number: String = "",
     @get:PropertyName("address") @set:PropertyName("address") var address: String = "",

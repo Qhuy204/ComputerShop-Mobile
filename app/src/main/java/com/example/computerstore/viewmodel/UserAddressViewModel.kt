@@ -10,58 +10,47 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class UserAddressViewModel : ViewModel() {
+
     private val repository = UserAddressRepository(UserAddressDaoImpl())
 
     private val _userAddresses = MutableStateFlow<List<UserAddress>>(emptyList())
-    val userAddresses: StateFlow<List<UserAddress>> = _userAddresses
-
-    private val _currentUserAddress = MutableStateFlow<UserAddress?>(null)
-    val currentUserAddress: StateFlow<UserAddress?> = _currentUserAddress
+    val userAddresses: StateFlow<List<UserAddress>> get() = _userAddresses
 
     fun loadAddressesByUser(userId: String) {
         viewModelScope.launch {
-            _userAddresses.value = repository.getUserAddresses().filter { it.user_id?.toString() == userId }
+            val all = repository.getAll()
+            _userAddresses.value = all.filter { it.user_id == userId }
         }
     }
 
-    fun loadAllUserAddresses() {
+    suspend fun getAddressById(id: String): UserAddress? {
+        return repository.getById(id)
+    }
+
+    fun addUserAddress(address: UserAddress) {
         viewModelScope.launch {
-            _userAddresses.value = repository.getUserAddresses()
+            repository.addUserAddress(address)
+            loadAddressesByUser(address.user_id ?: "")
         }
     }
 
-    fun loadUserAddress(id: Int) {
+    fun updateUserAddress(address: UserAddress) {
         viewModelScope.launch {
-            _currentUserAddress.value = repository.getUserAddress(id)
+            repository.updateUserAddress(address)
+            loadAddressesByUser(address.user_id ?: "")
         }
     }
 
-    fun addUserAddress(userAddress: UserAddress) {
-        viewModelScope.launch {
-            repository.addUserAddress(userAddress)
-            loadAllUserAddresses()
-        }
-    }
-
-    fun updateUserAddress(userAddress: UserAddress) {
-        viewModelScope.launch {
-            repository.updateUserAddress(userAddress)
-            loadAllUserAddresses()
-        }
-    }
-
-    fun deleteUserAddress(id: Int) {
+    fun deleteUserAddress(id: String?) {
         viewModelScope.launch {
             repository.deleteUserAddress(id)
-            loadAllUserAddresses()
         }
     }
 
-    fun setDefaultAddress(addressId: Any?, userId: String) {
+    fun setDefaultAddress(addressId: String?, userId: String) {
         viewModelScope.launch {
             repository.setDefaultAddress(addressId, userId)
             loadAddressesByUser(userId)
         }
     }
-
 }

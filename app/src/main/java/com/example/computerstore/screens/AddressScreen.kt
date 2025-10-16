@@ -1,11 +1,12 @@
 package com.example.computerstore.screens
 
-import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,148 +14,271 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.computerstore.R
-import com.example.computerstore.screens.components.CartItemRowShopee
-import com.example.computerstore.screens.components.CustomCheckbox
-import com.example.computerstore.screens.components.CustomTopBar
-import com.example.computerstore.viewmodel.CartViewModel
-import com.example.computerstore.viewmodel.ProductImageViewModel
-import com.example.computerstore.viewmodel.ProductVariantViewModel
-import com.example.computerstore.viewmodel.ProductViewModel
+import com.example.computerstore.data.model.UserAddress
+import com.example.computerstore.screens.components.CustomTopBarProfile
+import com.example.computerstore.viewmodel.UserAddressViewModel
 import com.google.firebase.auth.FirebaseAuth
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddressScreen(
     navController: NavController,
-    cartViewModel: CartViewModel = viewModel(),
-    productViewModel: ProductViewModel = viewModel(),
-    variantViewModel: ProductVariantViewModel = viewModel(),
-    imageViewModel: ProductImageViewModel = viewModel(),
-    onCheckoutClick: () -> Unit = {}
+    addressViewModel: UserAddressViewModel = viewModel()
 ) {
-    val carts by cartViewModel.carts.collectAsState()
-    val products by productViewModel.products.collectAsState()
-    val variants by variantViewModel.productVariants.collectAsState()
-    val images by imageViewModel.productImages.collectAsState()
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    val addresses by addressViewModel.userAddresses.collectAsState()
 
-    val selectedIds = remember { mutableStateListOf<String>() }
-
-    val totalPrice = carts.filter { selectedIds.contains(it.cart_id ?: "") }.sumOf { cart ->
-        val product = products.find { it.product_id == cart.product_id }
-        val variant = variants.find { it.variant_id == cart.variant_id }
-        val price = (product?.base_price ?: 0.0) + (variant?.price_adjustment ?: 0.0)
-        price * cart.quantity
+    LaunchedEffect(uid) {
+        addressViewModel.loadAddressesByUser(uid)
     }
-
-    val userId = FirebaseAuth.getInstance().currentUser?.uid
-    LaunchedEffect(userId) {
-        userId?.let { cartViewModel.loadCartsByUser(it) }
-        productViewModel.loadAllProducts()
-        variantViewModel.loadAllProductVariants()
-        imageViewModel.loadAllProductImages()
-    }
-
-    Log.d("CartScreen", "Carts: $carts")
 
     Scaffold(
         topBar = {
-            CustomTopBar(
-                title = "Giỏ hàng",
-                iconRes = R.drawable.leftarrow,
-                onBackClick = { navController.popBackStack() }
-            )
+            CustomTopBarProfile(title = "Danh sách địa chỉ", navController = navController)
         },
-        bottomBar = {
-            if (carts.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White)
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CustomCheckbox(
-                            checked = selectedIds.size == carts.size,
-                            onCheckedChange = { checked ->
-                                if (checked) {
-                                    selectedIds.clear()
-                                    selectedIds.addAll(carts.mapNotNull { it.cart_id })
-                                } else selectedIds.clear()
-                            }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Tất cả")
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "Tổng: ${"%,.0f".format(totalPrice)} đ",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Red
-                        )
-                        Button(
-                            onClick = {
-                                if (selectedIds.isNotEmpty()) {
-                                    val joinedIds = selectedIds.joinToString(",")
-                                    navController.navigate("checkout/$joinedIds")
-                                }
-                            },
-                            modifier = Modifier.height(40.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                        ) {
-                            Text("Mua hàng (${selectedIds.size})", color = Color.White)
-                        }
-
-                    }
-                }
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@FloatingActionButton
+                    navController.navigate("add_or_edit_address?userId=$uid")
+                },
+                containerColor = Color(0xFFDC2626),
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, "Thêm địa chỉ")
             }
         }
     ) { padding ->
-        if (carts.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { Text("Giỏ hàng trống") }
+        if (addresses.isEmpty()) {
+            EmptyAddressState(navController)
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(Color(0xFFF5F5F5))
                     .padding(padding)
-                    .background(Color(0xFFf6f6f6))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(carts, key = { it.cart_id ?: "" }) { cart ->
-                    CartItemRowShopee(
-                        cart = cart,
-                        selected = selectedIds.contains(cart.cart_id),
-                        onSelect = { checked ->
-                            cart.cart_id?.let { id ->
-                                if (checked) selectedIds.add(id)
-                                else selectedIds.remove(id)
-                            }
-                        },
-                        onIncrease = { cartViewModel.increaseQuantity(cart) },
-                        onDecrease = { cartViewModel.decreaseQuantity(cart) },
-                        onDelete = {
-                            cart.cart_id?.let { id ->
-                                val uid = FirebaseAuth.getInstance().currentUser?.uid
-                                if (uid != null) {
-                                    cartViewModel.deleteCart(id, uid)
-                                    selectedIds.remove(id)
-                                }
-                            }
-                        },
-                        products = products,
-                        variants = variants,
-                        images = images,
-                        onItemClick = { productId ->
-                            navController.navigate("productDetails/$productId")
-                        }
+                items(addresses.size) { i ->
+                    val addr = addresses[i]
+                    AddressCard(
+                        navController = navController,
+                        address = addr,
+                        onDelete = { addressViewModel.deleteUserAddress(addr.address_id) },
+                        onSetDefault = { addressViewModel.setDefaultAddress(addr.address_id, uid) }
                     )
+                }
+                item { Spacer(Modifier.height(72.dp)) } // Space for FAB
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyAddressState(navController: NavController) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                Icons.Default.LocationOn,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = Color(0xFFBDBDBD)
+            )
+            Text(
+                "Chưa có địa chỉ nào",
+                fontSize = 16.sp,
+                color = Color(0xFF757575)
+            )
+            Button(
+                onClick = {
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@Button
+                    navController.navigate("add_or_edit_address?userId=$uid")
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+            ) {
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Thêm địa chỉ mới")
+            }
+        }
+    }
+}
+
+@Composable
+fun AddressCard(
+    navController: NavController,
+    address: UserAddress,
+    onDelete: () -> Unit,
+    onSetDefault: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        address.recipient_name?.let {
+                            Text(
+                                it,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF212121)
+                            )
+                        }
+                        if (address.is_default == 1) {
+                            Surface(
+                                color = Color(0xFFFEF2F2),
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(1.dp, Color(0xFFDC2626))
+                            ) {
+                                Text(
+                                    "Mặc định",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFFDC2626),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Phone,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = Color(0xFF757575)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            address.phone_number,
+                            fontSize = 14.sp,
+                            color = Color(0xFF757575)
+                        )
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    IconButton(
+                        onClick = {
+                            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@IconButton
+                            navController.navigate("add_or_edit_address?addressId=${address.address_id}&userId=$uid")
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Sửa",
+                            tint = Color(0xFF2563EB),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Xóa",
+                            tint = Color(0xFFDC2626),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            Divider(color = Color(0xFFE0E0E0))
+
+            // Address Details
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!address.address_type.isNullOrBlank()) {
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(
+                            Icons.Default.Home,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = Color(0xFF757575)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            address.address_type!!,
+                            fontSize = 13.sp,
+                            color = Color(0xFF757575),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color(0xFF757575)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        buildString {
+                            append(address.address)
+                            if (!address.district.isNullOrBlank()) append(", ${address.district}")
+                            if (!address.city.isNullOrBlank()) append(", ${address.city}")
+                            if (!address.province.isNullOrBlank()) append(", ${address.province}")
+                        },
+                        fontSize = 14.sp,
+                        color = Color(0xFF424242),
+                        lineHeight = 20.sp
+                    )
+                }
+            }
+
+            // Set Default Button
+            if (address.is_default != 1) {
+                Divider(color = Color(0xFFE0E0E0))
+
+                TextButton(
+                    onClick = onSetDefault,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFDC2626)
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Đặt làm địa chỉ mặc định", fontSize = 14.sp)
                 }
             }
         }

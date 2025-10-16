@@ -14,20 +14,28 @@ class OrderItemDaoImpl : OrderItemDao {
         return snapshot.documents.mapNotNull { it.toObject(OrderItem::class.java) }
     }
 
-    override suspend fun getById(id: Int): OrderItem? {
-        val doc = collection.document(id.toString()).get().await()
+    override suspend fun getById(id: String): OrderItem? {
+        val doc = collection.document(id).get().await()
         return doc.toObject(OrderItem::class.java)
     }
 
     override suspend fun insert(orderItem: OrderItem) {
-        collection.document(orderItem.order_item_id.toString()).set(orderItem).await()
+        val docRef = if (!orderItem.order_item_id.isNullOrEmpty()) {
+            collection.document(orderItem.order_item_id!!)
+        } else {
+            collection.document()
+        }
+
+        val newOrderItem = orderItem.copy(order_item_id = docRef.id)
+        docRef.set(newOrderItem).await()
     }
 
     override suspend fun update(orderItem: OrderItem) {
-        collection.document(orderItem.order_item_id.toString()).set(orderItem).await()
+        if (orderItem.order_item_id.isNullOrEmpty()) return
+        collection.document(orderItem.order_item_id!!).set(orderItem).await()
     }
 
-    override suspend fun delete(id: Int) {
-        collection.document(id.toString()).delete().await()
+    override suspend fun delete(id: String) {
+        collection.document(id).delete().await()
     }
 }

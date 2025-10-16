@@ -10,7 +10,6 @@ class OrderDaoImpl : OrderDao {
     private val db = FirebaseFirestore.getInstance()
     private val collection = db.collection("orders")
 
-    // ✅ Đã fix: bọc try-catch để bỏ qua các doc có kiểu dữ liệu không khớp (Long → String)
     override suspend fun getAll(): List<Order> {
         val result = mutableListOf<Order>()
         val snapshot = collection.get().await()
@@ -27,7 +26,7 @@ class OrderDaoImpl : OrderDao {
         return result
     }
 
-    // ✅ (mới) load đơn hàng theo UID (String)
+    // load đơn hàng theo UID (String)
     suspend fun getOrdersByUser(uid: String): List<Order> {
         val result = mutableListOf<Order>()
         val snapshot = collection.whereEqualTo("user_id", uid).get().await()
@@ -62,10 +61,14 @@ class OrderDaoImpl : OrderDao {
     }
 
     override suspend fun update(order: Order) {
-        order.order_id?.let {
-            collection.document(it).set(order).await()
-        } ?: Log.w("OrderDaoImpl", "⚠️ Tried to update order without ID")
+        val id = (order.order_id as? String) ?: order.order_id?.toString()
+        if (!id.isNullOrEmpty()) {
+            collection.document(id).set(order).await()
+        } else {
+            Log.w("OrderDaoImpl", "⚠️ Tried to update order without valid ID")
+        }
     }
+
 
     override suspend fun delete(id: String) {
         collection.document(id).delete().await()

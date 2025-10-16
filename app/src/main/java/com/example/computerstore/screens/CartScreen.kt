@@ -41,10 +41,10 @@ fun CartScreen(
     val images by imageViewModel.productImages.collectAsState()
     val selectedCartItemId by cartViewModel.selectedCartItemId.collectAsState()
 
-    // ✅ Danh sách các ID được chọn
+    // Danh sách các ID được chọn
     val selectedIds = remember { mutableStateListOf<String>() }
 
-    // ✅ Tự động tick item được chọn khi “Buy Now”
+    // Tự động tick item được chọn khi “Buy Now”
     LaunchedEffect(selectedCartItemId, carts) {
         selectedIds.clear()
         selectedCartItemId?.let { id ->
@@ -54,7 +54,7 @@ fun CartScreen(
         }
     }
 
-    // ✅ Tính tổng tiền
+    // Tính tổng tiền
     val totalPrice = carts.filter { selectedIds.contains(it.cart_id ?: "") }.sumOf { cart ->
         val product = products.find { it.product_id == cart.product_id }
         val variant = variants.find { it.variant_id == cart.variant_id }
@@ -62,7 +62,7 @@ fun CartScreen(
         price * cart.quantity
     }
 
-    // ✅ Load dữ liệu khi mở màn hình
+    // Load dữ liệu
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     LaunchedEffect(userId) {
         userId?.let { cartViewModel.loadCartsByUser(it) }

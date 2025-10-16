@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.computerstore.data.model.Order
 import com.example.computerstore.data.model.User
 import com.example.computerstore.data.model.UserAddress
@@ -53,20 +54,20 @@ fun ProfileScreen(
     addressViewModel: UserAddressViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
     onLogout: () -> Unit = {},
-    navController: androidx.navigation.NavController // 🔹 thêm navController
+    navController: NavController
 ) {
     val authUser = FirebaseAuth.getInstance().currentUser
     val uid = authUser?.uid
-
     val user by userViewModel.currentUser.collectAsState()
     val orders by orderViewModel.orders.collectAsState()
     val addresses by addressViewModel.userAddresses.collectAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uid) {
-        if (uid != null) {
-            userViewModel.loadUser(uid)
-            orderViewModel.loadOrdersByUser(uid)
-            addressViewModel.loadAddressesByUser(uid)
+        uid?.let {
+            userViewModel.loadUser(it)
+            orderViewModel.loadOrdersByUser(it)
+            addressViewModel.loadAddressesByUser(it)
         }
     }
 
@@ -78,13 +79,11 @@ fun ProfileScreen(
         contentPadding = PaddingValues(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
         item {
             user?.let { ProfileHeader(it) } ?: DefaultProfilePlaceholder()
         }
 
         if (user != null) {
-            // Tóm tắt
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -95,7 +94,6 @@ fun ProfileScreen(
                 }
             }
 
-            // Mục hành động nhanh
             item {
                 QuickActionSection(
                     onEditProfile = { navController.navigate("edit_profile") },
@@ -104,7 +102,6 @@ fun ProfileScreen(
                 )
             }
 
-            // Thông tin cá nhân
             item {
                 SectionHeaderWithAction(
                     title = "Thông tin cá nhân",
@@ -116,7 +113,6 @@ fun ProfileScreen(
 
             item { ProfileInfo(user!!) }
 
-            // Địa chỉ giao hàng
             item {
                 SectionHeaderWithAction(
                     title = "Địa chỉ giao hàng",
@@ -132,53 +128,74 @@ fun ProfileScreen(
                 items(addresses) { addr -> AddressCardProfile(addr) }
             }
 
-            // Lịch sử đơn hàng
             item { SectionHeader("Lịch sử đơn hàng", Icons.Default.ShoppingBag) }
 
             if (orders.isEmpty()) {
                 item { EmptyState(Icons.Default.ShoppingBag, "Bạn chưa có đơn hàng nào") }
             } else {
-                items(orders.sortedByDescending { it.order_date }) { order ->
-                    OrderCard(order)
-                }
+                items(orders.sortedByDescending { it.order_date }) { order -> OrderCard(order) }
             }
 
-            // Đăng xuất
             item {
-                Button(
-                    onClick = {
-                        FirebaseAuth.getInstance().signOut()
-                        onLogout()
-                        navController.navigate("login") { popUpTo(0) } // Đưa về màn login
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp)
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
-                    shape = RoundedCornerShape(28.dp)
-                ) {
-                    Icon(Icons.Default.ExitToApp, contentDescription = null, tint = WhiteBg)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Đăng xuất", color = WhiteBg, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Column {
+                    Button(
+                        onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            onLogout()
+                            navController.navigate("login") { popUpTo(0) }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp)
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
+                        shape = RoundedCornerShape(28.dp)
+                    ) {
+                        Icon(Icons.Default.ExitToApp, null, tint = WhiteBg)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Đăng xuất", color = WhiteBg, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .padding(top = 8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                        shape = RoundedCornerShape(28.dp)
+                    ) {
+                        Text("Xóa tài khoản", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         } else {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = RedPrimary)
                 }
             }
         }
     }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    user?.user_id?.let { userViewModel.deleteUser(it.toString()) }
+                    FirebaseAuth.getInstance().signOut()
+                    navController.navigate("login") { popUpTo(0) }
+                }) { Text("Xác nhận", color = RedPrimary) }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Hủy") } },
+            title = { Text("Xóa tài khoản") },
+            text = { Text("Bạn có chắc chắn muốn xóa tài khoản này không?") }
+        )
+    }
 }
 
-// 🔹 Cập nhật lại QuickActionSection
+
 @Composable
 fun QuickActionSection(
     onEditProfile: () -> Unit,
@@ -387,16 +404,16 @@ fun ProfileInfo(user: User) {
         HorizontalDivider(color = GrayLight.copy(alpha = 0.5f), thickness = 1.dp)
 
         // Registration Date (Có thể null từ Firestore)
-        val registrationDateValue = user.registration_date?.let {
-            formatter.format(it.toDate())
-        } ?: "N/A (Dữ liệu hệ thống)"
-        InfoRow(Icons.Default.CalendarToday, "Ngày đăng ký", registrationDateValue)
-
-        // Last Login (Có thể null từ Firestore)
-        val lastLoginValue = user.last_login?.let {
-            formatter.format(it.toDate())
-        } ?: "N/A (Dữ liệu hệ thống)"
-        InfoRow(Icons.Default.Login, "Đăng nhập gần nhất", lastLoginValue)
+//        val registrationDateValue = user.registration_date?.let {
+//            formatter.format(it.toDate())
+//        } ?: "N/A (Dữ liệu hệ thống)"
+//        InfoRow(Icons.Default.CalendarToday, "Ngày đăng ký", registrationDateValue)
+//
+//        // Last Login (Có thể null từ Firestore)
+//        val lastLoginValue = user.last_login?.let {
+//            formatter.format(it.toDate())
+//        } ?: "N/A (Dữ liệu hệ thống)"
+//        InfoRow(Icons.Default.Login, "Đăng nhập gần nhất", lastLoginValue)
     }
 }
 
@@ -484,12 +501,14 @@ fun AddressCardProfile(address: UserAddress) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = address.recipient_name,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = BlackText
-            )
+            address.recipient_name?.let {
+                Text(
+                    text = it,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BlackText
+                )
+            }
             if (address.is_default == 1) {
                 Surface(
                     color = RedPrimary.copy(alpha = 0.2f),
@@ -514,11 +533,13 @@ fun AddressCardProfile(address: UserAddress) {
                 modifier = Modifier.size(16.dp)
             )
             Spacer(Modifier.width(6.dp))
-            Text(
-                text = address.phone_number,
-                fontSize = 14.sp,
-                color = GrayText
-            )
+            address.phone_number?.let {
+                Text(
+                    text = it,
+                    fontSize = 14.sp,
+                    color = GrayText
+                )
+            }
         }
 
         Row(verticalAlignment = Alignment.Top) {
@@ -609,12 +630,14 @@ fun OrderCard(order: Order) {
                 modifier = Modifier.size(16.dp).padding(top = 2.dp)
             )
             Spacer(Modifier.width(6.dp))
-            Text(
-                text = order.shipping_address,
-                fontSize = 12.sp,
-                color = GrayText,
-                lineHeight = 18.sp
-            )
+            order.shipping_address?.let {
+                Text(
+                    text = it,
+                    fontSize = 12.sp,
+                    color = GrayText,
+                    lineHeight = 18.sp
+                )
+            }
         }
     }
 }

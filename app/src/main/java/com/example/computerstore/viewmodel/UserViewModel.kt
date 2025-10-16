@@ -42,9 +42,6 @@ class UserViewModel : ViewModel() {
     fun updateUser(user: User) {
         viewModelScope.launch {
             repository.updateUser(user)
-            // Nếu bạn muốn người dùng hiện tại được cập nhật ngay lập tức
-            // thì cần có một cơ chế lắng nghe real-time trong repository,
-            // hoặc gọi lại loadUser nếu repository không tự động update
             loadAllUsers()
         }
     }
@@ -56,4 +53,16 @@ class UserViewModel : ViewModel() {
             loadAllUsers()
         }
     }
+
+
+    fun saveUser(user: User) {
+        viewModelScope.launch {
+            if (user.user_id.isEmpty()) {
+                repository.addUser(user)
+            } else {
+                repository.updateUser(user)
+            }
+        }
+    }
+
 }

@@ -111,6 +111,7 @@ fun CheckoutScreen(
                         onClick = {
                             if (userId != null && selectedAddress != null && selectedPayment != null) {
                                 val order = Order(
+                                    user_id = userId,
                                     guest_name = selectedAddress!!.recipient_name,
                                     guest_phone = selectedAddress!!.phone_number,
                                     shipping_address = selectedAddress!!.address,
@@ -120,6 +121,7 @@ fun CheckoutScreen(
                                     payment_status = "Pending",
                                     order_date = Timestamp.now()
                                 )
+
                                 orderViewModel.addOrder(order) { newOrderId ->
                                     selectedCarts.forEach { cart ->
                                         val product = products.find { it.product_id == cart.product_id }
@@ -129,14 +131,14 @@ fun CheckoutScreen(
 
                                         orderItemViewModel.addOrderItem(
                                             OrderItem(
-                                                order_id = newOrderId.toIntOrNull(),
-                                                product_id = cart.product_id,
+                                                order_id = newOrderId,                                                product_id = cart.product_id,
                                                 variant_id = cart.variant_id,
                                                 variant_sku = cart.variant_sku,
                                                 quantity = cart.quantity,
                                                 price_at_time = price
                                             )
                                         )
+
                                     }
 
                                     // xóa các cart đã thanh toán
@@ -357,7 +359,7 @@ fun AddressCard(address: UserAddress, isSelected: Boolean, onClick: () -> Unit) 
             .clickable { onClick() }
             .padding(12.dp)
     ) {
-        Text(address.recipient_name, fontWeight = FontWeight.Bold)
+        address.recipient_name?.let { Text(it, fontWeight = FontWeight.Bold) }
         Text("SĐT: ${address.phone_number}")
         Text("${address.address}, ${address.city}, ${address.province}")
     }

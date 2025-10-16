@@ -29,7 +29,7 @@ fun CustomTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(Color.White)
+            .background(Color(0xFFDC2626))
             .padding(horizontal = 16.dp)
     ) {
         Row(
@@ -41,7 +41,7 @@ fun CustomTopBar(
                     Icon(
                         painter = painterResource(id = iconRes),
                         contentDescription = "Back",
-                        tint = Color.Black
+                        tint = Color.White
                     )
                 }
             }
@@ -52,7 +52,7 @@ fun CustomTopBar(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = Color.Black
+                color = Color.White
             )
         }
     }

@@ -18,44 +18,78 @@ class OrderViewModel : ViewModel() {
     private val _currentOrder = MutableStateFlow<Order?>(null)
     val currentOrder: StateFlow<Order?> = _currentOrder
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     fun loadAllOrders() {
         viewModelScope.launch {
-            _orders.value = repository.getOrders()
+            _isLoading.value = true
+            try {
+                _orders.value = repository.getOrders()
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
-    // ✅ Chỉ lấy đơn hàng theo UID hiện tại
     fun loadOrdersByUser(userId: String) {
         viewModelScope.launch {
-            _orders.value = repository.getOrders().filter { it.user_id == userId }
+            _isLoading.value = true
+            try {
+                _orders.value = repository.getOrders()
+                    .filter { it.user_id == userId }
+                    .sortedByDescending { it.order_date }
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
     fun loadOrder(id: String) {
         viewModelScope.launch {
-            _currentOrder.value = repository.getOrder(id)
+            _isLoading.value = true
+            try {
+                _currentOrder.value = repository.getOrder(id)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
     fun addOrder(order: Order, onSuccess: (String) -> Unit = {}) {
         viewModelScope.launch {
-            val orderId = repository.addOrder(order)
-            loadAllOrders()
-            onSuccess(orderId)
+            _isLoading.value = true
+            try {
+                val orderId = repository.addOrder(order)
+                loadOrdersByUser(order.user_id ?: "")
+                onSuccess(orderId)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
     fun updateOrder(order: Order) {
         viewModelScope.launch {
-            repository.updateOrder(order)
-            loadAllOrders()
+            _isLoading.value = true
+            try {
+                repository.updateOrder(order)
+                loadOrdersByUser(order.user_id ?: "")
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
     fun deleteOrder(id: String) {
         viewModelScope.launch {
-            repository.deleteOrder(id)
-            loadAllOrders()
+            _isLoading.value = true
+            try {
+                repository.deleteOrder(id)
+                loadAllOrders()
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 }

@@ -17,6 +17,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.computerstore.navigation.BottomBar
 import com.example.computerstore.navigation.BottomBarScreen
+import com.example.computerstore.screens.AddOrEditAddressScreen
+import com.example.computerstore.screens.AddressScreen
 import com.example.computerstore.screens.BrandDetailScreen
 import com.example.computerstore.screens.CartScreen
 import com.example.computerstore.screens.CategoryDetailScreen
@@ -194,13 +196,41 @@ fun MainScaffold(onLogout: () -> Unit) {
                 EditProfileScreen(navController = navController)
             }
 
-            composable("manage_a    ddress") {
-                ManageAddressScreen(navController = navController)
+            composable("address_manager") {
+                AddressScreen(navController = navController)
             }
 
             composable("order_history") {
                 OrderHistoryScreen(navController = navController)
             }
+
+            composable(
+                route = "add_or_edit_address?addressId={addressId}&userId={userId}",
+                arguments = listOf(
+                    navArgument("addressId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("userId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val addressId = backStackEntry.arguments?.getString("addressId")
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                AddOrEditAddressScreen(
+                    navController = navController,
+                    userId = userId,
+                    addressId = addressId
+                )
+            }
+
+            // Order
+            composable("orders") {
+                OrderHistoryScreen(navController = navController)
+            }
+
 
 
         }

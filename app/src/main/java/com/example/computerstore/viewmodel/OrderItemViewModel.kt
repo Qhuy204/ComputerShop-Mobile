@@ -24,7 +24,7 @@ class OrderItemViewModel : ViewModel() {
         }
     }
 
-    fun loadOrderItem(id: Int) {
+    fun loadOrderItem(id: String) {
         viewModelScope.launch {
             _currentOrderItem.value = repository.getOrderItem(id)
         }
@@ -44,7 +44,7 @@ class OrderItemViewModel : ViewModel() {
         }
     }
 
-    fun deleteOrderItem(id: Int) {
+    fun deleteOrderItem(id: String) {
         viewModelScope.launch {
             repository.deleteOrderItem(id)
             loadAllOrderItems()

@@ -82,8 +82,8 @@ fun ManageAddressScreen(
                         }
                 ) {
                     Column(Modifier.padding(12.dp)) {
-                        Text(addr.recipient_name, fontWeight = FontWeight.Bold)
-                        Text(addr.phone_number, color = Color.Gray)
+                        addr.recipient_name?.let { Text(it, fontWeight = FontWeight.Bold) }
+                        addr.phone_number?.let { Text(it, color = Color.Gray) }
                         Text("${addr.address}, ${addr.city}, ${addr.province}")
                         if (addr.is_default == 1) {
                             Text("Địa chỉ mặc định", color = Color(0xFFDC2626), style = MaterialTheme.typography.labelSmall)

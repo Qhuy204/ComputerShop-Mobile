@@ -1,5 +1,7 @@
 package com.example.computerstore
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -12,6 +14,7 @@ import com.example.computerstore.screens.LoginScreen
 import com.example.computerstore.screens.SignupScreen
 import com.google.firebase.auth.FirebaseAuth
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun App() {
     val navController = rememberNavController()
