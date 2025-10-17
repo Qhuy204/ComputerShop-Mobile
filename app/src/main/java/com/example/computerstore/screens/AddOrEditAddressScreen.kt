@@ -29,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.computerstore.R
 import com.example.computerstore.data.model.UserAddress
+import com.example.computerstore.screens.components.CustomTopBar
 import com.example.computerstore.screens.components.CustomTopBarProfile
 import com.example.computerstore.viewmodel.UserAddressViewModel
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +54,11 @@ fun AddOrEditAddressScreen(
     isEdit: Boolean = false
 ) {
     val context = LocalContext.current
+
+    val navBackStackEntry = navController.currentBackStackEntry
+    val actualIsEdit = remember {
+        navBackStackEntry?.arguments?.getString("isEdit")?.toBoolean() ?: isEdit
+    }
 
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
@@ -77,6 +84,50 @@ fun AddOrEditAddressScreen(
     val textPrimary = Color(0xFF212121)
     val textSecondary = Color.Black
     val accentGlow = Color(0xFFFF5252)
+
+    Log.d("AddressScreen", "AddressId: $addressId, Status Edit: $actualIsEdit")
+
+    // --- Nếu là chế độ sửa ---
+    LaunchedEffect(addressId, provinces.isNotEmpty()) {
+        if (actualIsEdit && !addressId.isNullOrEmpty() && provinces.isNotEmpty()) {
+            val existing = addressViewModel.getAddressById(addressId)
+            if (existing != null) {
+                name = existing.recipient_name ?: ""
+                phone = existing.phone_number ?: ""
+                addressType = existing.address_type ?: "Nhà riêng"
+                addressDetail = existing.address?.split(",")?.firstOrNull()?.trim() ?: ""
+
+                // chọn tỉnh/huyện/xã tương ứng
+                selectedProvince = provinces.find { it.name == existing.province }
+                if (selectedProvince != null) {
+                    val json = withContext(Dispatchers.IO) {
+                        URL("https://provinces.open-api.vn/api/v1/p/${selectedProvince!!.code}?depth=2").readText()
+                    }
+                    val obj = JSONObject(json)
+                    val districtArray = obj.getJSONArray("districts")
+                    districts = (0 until districtArray.length()).map { i ->
+                        val d = districtArray.getJSONObject(i)
+                        District(d.getString("name"), d.getInt("code"), d.getInt("province_code"))
+                    }.sortedBy { it.name }
+                    selectedDistrict = districts.find { it.name == existing.district }
+                }
+
+                if (selectedDistrict != null) {
+                    val json = withContext(Dispatchers.IO) {
+                        URL("https://provinces.open-api.vn/api/v1/d/${selectedDistrict!!.code}?depth=2").readText()
+                    }
+                    val obj = JSONObject(json)
+                    val wardArray = obj.getJSONArray("wards")
+                    wards = (0 until wardArray.length()).map { i ->
+                        val w = wardArray.getJSONObject(i)
+                        Ward(w.getString("name"), w.getInt("code"), w.getInt("district_code"))
+                    }.sortedBy { it.name }
+                    selectedWard = wards.find { it.name == existing.city }
+                }
+            }
+        }
+    }
+
 
     // --- Load tỉnh ---
     LaunchedEffect(Unit) {
@@ -137,9 +188,10 @@ fun AddOrEditAddressScreen(
 
     Scaffold(
         topBar = {
-            CustomTopBarProfile(
-                title = if (isEdit) "Chỉnh sửa địa chỉ" else "Địa chỉ mới",
-                navController = navController
+            CustomTopBar(
+                title = if (actualIsEdit) "Chỉnh sửa địa chỉ" else "Địa chỉ mới",
+                iconRes = R.drawable.leftarrow,
+                onBackClick = { navController.popBackStack() }
             )
         },
         containerColor = lightBg
@@ -465,12 +517,19 @@ fun AddOrEditAddressScreen(
             // --- Nút Lưu ---
             Button(
                 onClick = {
+                    val fullAddress = buildString {
+                        append(addressDetail.trim())
+                        if (!selectedWard?.name.isNullOrEmpty()) append(", ${selectedWard?.name}")
+                        if (!selectedDistrict?.name.isNullOrEmpty()) append(", ${selectedDistrict?.name}")
+                        if (!selectedProvince?.name.isNullOrEmpty()) append(", ${selectedProvince?.name}")
+                    }
+
                     val newAddress = UserAddress(
                         address_id = addressId ?: "",
                         user_id = userId,
-                        recipient_name = name,
-                        phone_number = phone,
-                        address = addressDetail,
+                        recipient_name = name.trim(),
+                        phone_number = phone.trim(),
+                        address = fullAddress,
                         district = selectedDistrict?.name ?: "",
                         city = selectedWard?.name ?: "",
                         province = selectedProvince?.name ?: "",
@@ -478,10 +537,17 @@ fun AddOrEditAddressScreen(
                         address_type = addressType,
                         is_default = 0
                     )
-                    if (isEdit) addressViewModel.updateUserAddress(newAddress)
-                    else addressViewModel.addUserAddress(newAddress)
 
-                    Toast.makeText(context, "✓ Lưu địa chỉ thành công", Toast.LENGTH_SHORT).show()
+                    Log.d("AddressScreen", "Saving address: $fullAddress")
+
+                    if (isEdit) {
+                        addressViewModel.updateUserAddress(newAddress)
+                        Toast.makeText(context, "Cập nhật địa chỉ thành công", Toast.LENGTH_SHORT).show()
+                    } else {
+                        addressViewModel.addUserAddress(newAddress)
+                        Toast.makeText(context, "Lưu địa chỉ thành công", Toast.LENGTH_SHORT).show()
+                    }
+
                     navController.popBackStack()
                 },
                 modifier = Modifier
@@ -504,7 +570,7 @@ fun AddOrEditAddressScreen(
                 )
             ) {
                 Text(
-                    text = if (isEdit) "CẬP NHẬT ĐỊA CHỈ" else "LƯU ĐỊA CHỈ",
+                    text = if (actualIsEdit) "CẬP NHẬT ĐỊA CHỈ" else "LƯU ĐỊA CHỈ",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,

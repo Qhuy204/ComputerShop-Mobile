@@ -24,7 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.computerstore.R
 import com.example.computerstore.data.model.User
+import com.example.computerstore.screens.components.CustomTopBar
 import com.example.computerstore.screens.components.CustomTopBarProfile
 import com.example.computerstore.viewmodel.UserViewModel
 import com.google.firebase.Timestamp
@@ -96,8 +98,12 @@ fun EditProfileScreen(
 
     Scaffold(
         topBar = {
-            CustomTopBarProfile(title = "Thông tin cá nhân", navController = navController)
-        }
+            CustomTopBar(
+                title = "Thông tin cá nhân",
+                iconRes = R.drawable.leftarrow,
+                onBackClick = { navController.popBackStack() }
+            )
+        },
     ) { padding ->
         Column(
             modifier = Modifier

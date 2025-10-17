@@ -19,21 +19,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.computerstore.R
+import com.example.computerstore.navigation.BottomBarScreen
 import com.example.computerstore.screens.components.CustomCheckbox
 import com.example.computerstore.ui.components.CustomTextField
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.navigation.NavHostController
 
 @Composable
-fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onLoginSuccess: () -> Unit) {
+fun LoginScreen(
+    navController: NavHostController,
+    onSignupClick: () -> Unit,
+    onLoginSuccess: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
+
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -43,7 +48,6 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .fillMaxWidth()
             .background(Color(0xFFE8F0FF))
             .clickable(
                 indication = null,
@@ -52,7 +56,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
                 focusManager.clearFocus()
             }
     ) {
-        // Background
+        // --- Background ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -66,7 +70,6 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
             )
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
                     .fillMaxSize()
                     .padding(16.dp),
                 verticalArrangement = Arrangement.Center,
@@ -87,7 +90,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
             }
         }
 
-        // Main content
+        // --- Main content ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -98,7 +101,6 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 0.dp)
                     .height(600.dp),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -112,7 +114,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Email Input
+                    // --- Email Input ---
                     CustomTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -124,7 +126,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Password Input
+                    // --- Password Input ---
                     CustomTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -137,7 +139,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // Checkbox + Forgot
+                    // --- Checkbox + Forgot password ---
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -145,7 +147,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             CustomCheckbox(
-                                modifier = Modifier.offset(x = 3.dp, y = (0).dp),
+                                modifier = Modifier.offset(x = 3.dp, y = 0.dp),
                                 checked = rememberMe,
                                 size = 24.dp,
                                 uncheckedBorderColor = Color.Transparent,
@@ -157,7 +159,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
                         }
 
                         TextButton(onClick = {
-                            // TODO: triển khai reset password
+                            Toast.makeText(context, "Reset password feature coming soon!", Toast.LENGTH_SHORT).show()
                         }) {
                             Text("Forgot password?", color = Color(0xFF3F7DE8))
                         }
@@ -165,7 +167,7 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Sign-in Button
+                    // --- Sign-in Button ---
                     Button(
                         onClick = {
                             if (email.isNotEmpty() && password.isNotEmpty()) {
@@ -174,49 +176,36 @@ fun LoginScreen(navController: NavHostController, onSignupClick: () -> Unit, onL
                                         val result = auth.signInWithEmailAndPassword(email, password).await()
                                         val user = result.user
                                         if (user != null) {
-                                            val doc = db.collection("users").document(user.uid).get().await()
-                                            val profile = doc.data
-                                            Toast.makeText(
-                                                context,
-                                                "✅ Welcome ${profile?.get("full_name") ?: user.email}",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-
-                                            // 🔹 Điều hướng sang HomeScreen
-                                            navController.navigate("home") {
-                                                popUpTo("login") { inclusive = true }
-                                            }
+                                            Toast.makeText(context, "Welcome ${user.email}", Toast.LENGTH_SHORT).show()
+                                            onLoginSuccess() // 🔹 Báo MainActivity đổi sang MainScaffold
                                         }
                                     } catch (e: Exception) {
-                                        Toast.makeText(context, "❌ Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             } else {
-                                Toast.makeText(context, "⚠️ Please enter email & password", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Please enter email & password", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F7DE8))
                     ) {
-                        Text("Sign in", fontSize = 16.sp)
+                        Text("Sign in", fontSize = 16.sp, color = Color.White)
                     }
 
-                    // Signup link
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Don't have an account?", color = Color.DarkGray)
-                            TextButton(onClick = onSignupClick) {
-                                Text("Sign up", color = Color(0xFF3F7DE8))
-                            }
+
+                    // --- Signup link ---
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Don't have an account?", color = Color.DarkGray)
+                        TextButton(onClick = onSignupClick) {
+                            Text("Sign up", color = Color(0xFF3F7DE8))
                         }
                     }
                 }

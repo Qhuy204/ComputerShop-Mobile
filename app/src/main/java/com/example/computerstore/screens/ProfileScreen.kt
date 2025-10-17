@@ -28,6 +28,7 @@ import androidx.navigation.NavController
 import com.example.computerstore.data.model.Order
 import com.example.computerstore.data.model.User
 import com.example.computerstore.data.model.UserAddress
+import com.example.computerstore.screens.components.OrderCard
 import com.example.computerstore.viewmodel.OrderViewModel
 import com.example.computerstore.viewmodel.UserAddressViewModel
 import com.example.computerstore.viewmodel.UserViewModel
@@ -133,7 +134,12 @@ fun ProfileScreen(
             if (orders.isEmpty()) {
                 item { EmptyState(Icons.Default.ShoppingBag, "Bạn chưa có đơn hàng nào") }
             } else {
-                items(orders.sortedByDescending { it.order_date }) { order -> OrderCard(order) }
+                items(orders.sortedByDescending { it.order_date }) { order ->
+                    OrderCard(
+                        order = order,
+                        onClick = { navController.navigate("order_detail/${order.order_id}") }
+                    )
+                }
             }
 
             item {
@@ -142,7 +148,7 @@ fun ProfileScreen(
                         onClick = {
                             FirebaseAuth.getInstance().signOut()
                             onLogout()
-                            navController.navigate("login") { popUpTo(0) }
+
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -154,18 +160,6 @@ fun ProfileScreen(
                         Icon(Icons.Default.ExitToApp, null, tint = WhiteBg)
                         Spacer(Modifier.width(8.dp))
                         Text("Đăng xuất", color = WhiteBg, fontWeight = FontWeight.Bold)
-                    }
-
-                    Button(
-                        onClick = { showDeleteDialog = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .padding(top = 8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                        shape = RoundedCornerShape(28.dp)
-                    ) {
-                        Text("Xóa tài khoản", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -560,87 +554,87 @@ fun AddressCardProfile(address: UserAddress) {
     }
 }
 
-@Composable
-fun OrderCard(order: Order) {
-    val statusColor = when (order.status.lowercase()) {
-        "đã giao", "hoàn thành" -> Color(0xFF10B981)
-        "đang giao" -> Color(0xFFF59E0B)
-        "đã hủy" -> Color(0xFFEF4444)
-        else -> GrayText
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(WhiteCard, RoundedCornerShape(16.dp))
-            .border(1.dp, GrayLight, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Mã đơn: ${order.order_id}",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = BlackText
-            )
-            Surface(
-                color = statusColor.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = order.status,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = statusColor
-                )
-            }
-        }
-
-        HorizontalDivider(color = GrayLight, thickness = 1.dp)
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Tổng tiền",
-                fontSize = 14.sp,
-                color = GrayText
-            )
-            Text(
-                text = "${"%,.0f".format(order.total_amount)} đ",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = RedPrimary
-            )
-        }
-
-        Row(verticalAlignment = Alignment.Top) {
-            Icon(
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = null,
-                tint = GrayText,
-                modifier = Modifier.size(16.dp).padding(top = 2.dp)
-            )
-            Spacer(Modifier.width(6.dp))
-            order.shipping_address?.let {
-                Text(
-                    text = it,
-                    fontSize = 12.sp,
-                    color = GrayText,
-                    lineHeight = 18.sp
-                )
-            }
-        }
-    }
-}
+//@Composable
+//fun OrderCard(order: Order) {
+//    val statusColor = when (order.status.lowercase()) {
+//        "đã giao", "hoàn thành" -> Color(0xFF10B981)
+//        "đang giao" -> Color(0xFFF59E0B)
+//        "đã hủy" -> Color(0xFFEF4444)
+//        else -> GrayText
+//    }
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .background(WhiteCard, RoundedCornerShape(16.dp))
+//            .border(1.dp, GrayLight, RoundedCornerShape(16.dp))
+//            .padding(16.dp),
+//        verticalArrangement = Arrangement.spacedBy(10.dp)
+//    ) {
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = "Mã đơn: ${order.order_id}",
+//                fontSize = 14.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = BlackText
+//            )
+//            Surface(
+//                color = statusColor.copy(alpha = 0.2f),
+//                shape = RoundedCornerShape(12.dp)
+//            ) {
+//                Text(
+//                    text = order.status,
+//                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+//                    fontSize = 11.sp,
+//                    fontWeight = FontWeight.Bold,
+//                    color = statusColor
+//                )
+//            }
+//        }
+//
+//        HorizontalDivider(color = GrayLight, thickness = 1.dp)
+//
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = "Tổng tiền",
+//                fontSize = 14.sp,
+//                color = GrayText
+//            )
+//            Text(
+//                text = "${"%,.0f".format(order.total_amount)} đ",
+//                fontSize = 18.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = RedPrimary
+//            )
+//        }
+//
+//        Row(verticalAlignment = Alignment.Top) {
+//            Icon(
+//                imageVector = Icons.Default.LocationOn,
+//                contentDescription = null,
+//                tint = GrayText,
+//                modifier = Modifier.size(16.dp).padding(top = 2.dp)
+//            )
+//            Spacer(Modifier.width(6.dp))
+//            order.shipping_address?.let {
+//                Text(
+//                    text = it,
+//                    fontSize = 12.sp,
+//                    color = GrayText,
+//                    lineHeight = 18.sp
+//                )
+//            }
+//        }
+//    }
+//}
 
 @Composable
 fun EmptyState(icon: ImageVector, message: String) {

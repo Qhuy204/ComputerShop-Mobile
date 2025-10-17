@@ -32,7 +32,8 @@ import com.example.computerstore.screens.ProductDetailsScreen
 import com.example.computerstore.screens.ProfileScreen
 import com.example.computerstore.screens.SearchResultScreen
 import com.example.computerstore.screens.EditProfileScreen
-import com.example.computerstore.screens.ManageAddressScreen
+import com.example.computerstore.screens.LoginScreen
+import com.example.computerstore.screens.OrderDetailScreen
 import com.example.computerstore.screens.OrderHistoryScreen
 import com.example.computerstore.viewmodel.OrderViewModel
 import com.example.computerstore.viewmodel.UserAddressViewModel
@@ -63,6 +64,21 @@ fun MainScaffold(onLogout: () -> Unit) {
             startDestination = BottomBarScreen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+
+            // Login
+            composable("login") {
+                LoginScreen(
+                    navController = navController,
+                    onSignupClick = { navController.navigate("signup") },
+                    onLoginSuccess = {
+                        navController.navigate(BottomBarScreen.Home.route) {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+
             composable(BottomBarScreen.Home.route) {
                 HomeScreen(
                     onLogout = onLogout,
@@ -95,10 +111,12 @@ fun MainScaffold(onLogout: () -> Unit) {
             ) { backStackEntry ->
                 val blogId = backStackEntry.arguments?.getInt("blogId") ?: 0
                 NewsDetailsScreen(
+                    navController = navController,
                     blogId = blogId,
                     onBackClick = { navController.popBackStack() }
                 )
             }
+
 
             composable("cart") {
                 CartScreen(
@@ -204,8 +222,10 @@ fun MainScaffold(onLogout: () -> Unit) {
                 OrderHistoryScreen(navController = navController)
             }
 
+
+            // Address
             composable(
-                route = "add_or_edit_address?addressId={addressId}&userId={userId}",
+                route = "add_or_edit_address?addressId={addressId}&userId={userId}&isEdit={isEdit}",
                 arguments = listOf(
                     navArgument("addressId") {
                         type = NavType.StringType
@@ -214,22 +234,41 @@ fun MainScaffold(onLogout: () -> Unit) {
                     },
                     navArgument("userId") {
                         type = NavType.StringType
+                        defaultValue = ""
+                    },
+                    navArgument("isEdit") {
+                        type = NavType.BoolType
+                        defaultValue = false
                     }
                 )
             ) { backStackEntry ->
                 val addressId = backStackEntry.arguments?.getString("addressId")
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                val isEdit = backStackEntry.arguments?.getBoolean("isEdit") ?: false
+
                 AddOrEditAddressScreen(
                     navController = navController,
                     userId = userId,
-                    addressId = addressId
+                    addressId = addressId,
+                    isEdit = isEdit
                 )
             }
+
 
             // Order
             composable("orders") {
                 OrderHistoryScreen(navController = navController)
             }
+
+            // Order details
+            composable(
+                route = "order_detail/{orderId}",
+                arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+                OrderDetailScreen(orderId = orderId, navController = navController)
+            }
+
 
 
 

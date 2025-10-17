@@ -17,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.computerstore.R
 import com.example.computerstore.data.model.UserAddress
+import com.example.computerstore.screens.components.CustomTopBar
 import com.example.computerstore.screens.components.CustomTopBarProfile
 import com.example.computerstore.viewmodel.UserAddressViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -37,7 +39,11 @@ fun AddressScreen(
 
     Scaffold(
         topBar = {
-            CustomTopBarProfile(title = "Danh sách địa chỉ", navController = navController)
+            CustomTopBar(
+                title = "Danh sách địa chỉ",
+                iconRes = R.drawable.leftarrow,
+                onBackClick = { navController.popBackStack() }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -193,7 +199,7 @@ fun AddressCard(
                     IconButton(
                         onClick = {
                             val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@IconButton
-                            navController.navigate("add_or_edit_address?addressId=${address.address_id}&userId=$uid")
+                            navController.navigate("add_or_edit_address?addressId=${address.address_id}&userId=$uid&isEdit=true")
                         },
                         modifier = Modifier.size(36.dp)
                     ) {

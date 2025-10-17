@@ -15,6 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.computerstore.R
+import com.example.computerstore.screens.components.CustomTopBar
+import com.example.computerstore.screens.components.CustomTopBarProfile
+import com.example.computerstore.screens.components.OrderCard
 import com.example.computerstore.viewmodel.OrderViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -36,27 +40,15 @@ fun OrderHistoryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Lịch sử đơn hàng") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Quay lại",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFDC2626),
-                    titleContentColor = Color.White
-                )
+            CustomTopBar(
+                title = "Danh sách đơn hàng",
+                iconRes = R.drawable.leftarrow,
+                onBackClick = { navController.popBackStack() }
             )
-        }
+        },
     ) { padding ->
 
         when {
-            // ✅ Hiển thị nếu chưa đăng nhập
             uid == null -> {
                 Box(
                     modifier = Modifier
@@ -68,7 +60,6 @@ fun OrderHistoryScreen(
                 }
             }
 
-            // ✅ Trạng thái loading
             isLoading -> {
                 Box(
                     modifier = Modifier
@@ -80,7 +71,6 @@ fun OrderHistoryScreen(
                 }
             }
 
-            // ✅ Không có đơn hàng
             orders.isEmpty() -> {
                 Box(
                     modifier = Modifier
@@ -102,7 +92,11 @@ fun OrderHistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(orders.sortedByDescending { it.order_date }) { order ->
-                        OrderCard(order)
+                        OrderCard(
+                            order = order,
+                            onClick = { navController.navigate("order_detail/${order.order_id}") }
+                        )
+
                     }
                 }
             }

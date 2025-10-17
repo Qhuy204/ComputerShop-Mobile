@@ -14,29 +14,13 @@ class UserAddressDaoImpl : UserAddressDao {
         val snapshot = collection.get().await()
         return snapshot.documents.mapNotNull { doc ->
             try {
-                val data = doc.data ?: return@mapNotNull null
-
-                // 🔹 Xử lý an toàn: chấp nhận cả Long và String
-                val addressId = when (val v = data["address_id"]) {
-                    is String -> v
-                    is Long -> v.toString()
-                    else -> null
-                }
-
-                val userId = when (val v = data["user_id"]) {
-                    is String -> v
-                    is Long -> v.toString()
-                    else -> null
-                }
-
                 val address = doc.toObject(UserAddress::class.java)
                 if (address != null) {
-                    address.address_id = addressId ?: ""
-                    address.user_id = userId
+                    address.address_id = doc.id
                 }
                 address
             } catch (e: Exception) {
-                Log.w("UserAddressDaoImpl", "⚠️ Skip invalid address ${doc.id}: ${e.message}")
+                Log.w("UserAddressDaoImpl", "Skip invalid address ${doc.id}: ${e.message}")
                 null
             }
         }
@@ -46,22 +30,15 @@ class UserAddressDaoImpl : UserAddressDao {
         return try {
             val doc = collection.document(id).get().await()
             val address = doc.toObject(UserAddress::class.java)
-            val data = doc.data
-            if (address != null && data != null) {
-                val userId = when (val v = data["user_id"]) {
-                    is String -> v
-                    is Long -> v.toString()
-                    else -> null
-                }
-                address.user_id = userId
+            if (address != null) {
+                address.address_id = doc.id
             }
             address
         } catch (e: Exception) {
-            Log.w("UserAddressDaoImpl", "⚠️ Error parsing address $id: ${e.message}")
+            Log.w("UserAddressDaoImpl", "Error parsing address $id: ${e.message}")
             null
         }
     }
-
 
     override suspend fun insert(userAddress: UserAddress) {
         val id = (userAddress.address_id ?: "").ifEmpty { collection.document().id }
@@ -70,8 +47,7 @@ class UserAddressDaoImpl : UserAddressDao {
     }
 
     override suspend fun update(userAddress: UserAddress) {
-        val id = (userAddress.address_id ?: "").ifEmpty { collection.document().id }
-        userAddress.address_id = id
+        val id = userAddress.address_id ?: return
         collection.document(id).set(userAddress).await()
     }
 

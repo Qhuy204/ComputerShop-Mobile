@@ -2,6 +2,7 @@ package com.example.computerstore.data.dao.impl
 
 import android.util.Log
 import com.example.computerstore.data.dao.OrderDao
+import com.example.computerstore.data.model.Blog
 import com.example.computerstore.data.model.Order
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -44,14 +45,26 @@ class OrderDaoImpl : OrderDao {
     }
 
     override suspend fun getById(id: String): Order? {
-        val doc = collection.document(id).get().await()
-        return try {
-            doc.toObject(Order::class.java)
-        } catch (e: Exception) {
-            Log.e("OrderDaoImpl", "❌ Failed to deserialize order $id: ${e.message}")
-            null
+        val snapshot = collection.whereEqualTo("order_id", id).get().await()
+
+        if (snapshot.isEmpty) {
+            Log.w("OrderDaoImpl", "⚠️ No order found with order_id=$id")
+            return null
+        }
+
+        val doc = snapshot.documents.first()
+        val order = doc.toObject(Order::class.java)
+
+        Log.d("OrderDaoImpl", "✅ Loaded order document ${doc.id} for order_id=$id")
+        Log.d("OrderDaoImpl", "📄 Documents fetched: ${snapshot.size()}")
+
+        // Gắn lại order_id nếu model chưa có
+        return order?.apply {
+            if (this.order_id == null) this.order_id = id
         }
     }
+
+
 
     override suspend fun insert(order: Order): String {
         val docId = collection.document().id

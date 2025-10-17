@@ -20,8 +20,11 @@ class OrderItemDaoImpl : OrderItemDao {
     }
 
     override suspend fun insert(orderItem: OrderItem) {
-        val docRef = if (!orderItem.order_item_id.isNullOrEmpty()) {
-            collection.document(orderItem.order_item_id!!)
+        // Ép sang String an toàn
+        val idStr = (orderItem.order_item_id as? String)?.takeIf { it.isNotBlank() }
+
+        val docRef = if (!idStr.isNullOrEmpty()) {
+            collection.document(idStr)
         } else {
             collection.document()
         }
@@ -31,8 +34,8 @@ class OrderItemDaoImpl : OrderItemDao {
     }
 
     override suspend fun update(orderItem: OrderItem) {
-        if (orderItem.order_item_id.isNullOrEmpty()) return
-        collection.document(orderItem.order_item_id!!).set(orderItem).await()
+        val idStr = (orderItem.order_item_id as? String)?.takeIf { it.isNotBlank() } ?: return
+        collection.document(idStr).set(orderItem).await()
     }
 
     override suspend fun delete(id: String) {

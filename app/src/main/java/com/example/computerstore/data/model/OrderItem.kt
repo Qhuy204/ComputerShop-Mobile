@@ -3,7 +3,7 @@ package com.example.computerstore.data.model
 import com.google.firebase.firestore.PropertyName
 
 data class OrderItem(
-    @get:PropertyName("order_item_id") @set:PropertyName("order_item_id") var order_item_id: String? = null,
+    @get:PropertyName("order_item_id") @set:PropertyName("order_item_id") var order_item_id: Any? = null,
     @get:PropertyName("order_id") @set:PropertyName("order_id") var order_id: String? = null,
     @get:PropertyName("product_id") @set:PropertyName("product_id") var product_id: Int? = null,
     @get:PropertyName("variant_id") @set:PropertyName("variant_id") var variant_id: Int? = null,

@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.SemanticsActions.OnClick
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -30,6 +31,7 @@ import com.example.computerstore.screens.components.CustomTopBar
 import com.example.computerstore.viewmodel.*
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,34 +124,60 @@ fun CheckoutScreen(
                                     order_date = Timestamp.now()
                                 )
 
-                                orderViewModel.addOrder(order) { newOrderId ->
-                                    selectedCarts.forEach { cart ->
-                                        val product = products.find { it.product_id == cart.product_id }
-                                        val variant = variants.find { it.variant_id == cart.variant_id }
-                                        val price =
-                                            (product?.base_price ?: 0.0) + (variant?.price_adjustment ?: 0.0)
+                                orderViewModel.addOrder(
+                                    order,
+                                    onSuccess = { newOrderId ->
+                                        // Log xác nhận Order đã tạo
+                                        android.util.Log.d("CheckoutScreen", "✅ Order created: $newOrderId")
 
-                                        orderItemViewModel.addOrderItem(
-                                            OrderItem(
-                                                order_id = newOrderId,                                                product_id = cart.product_id,
-                                                variant_id = cart.variant_id,
-                                                variant_sku = cart.variant_sku,
-                                                quantity = cart.quantity,
-                                                price_at_time = price
-                                            )
-                                        )
+                                        // Tạo OrderItem tuần tự
+                                        orderItemViewModel.viewModelScope.launch {
+                                            try {
+                                                for (cart in selectedCarts) {
+                                                    val product = products.find { it.product_id == cart.product_id }
+                                                    val variant = variants.find { it.variant_id == cart.variant_id }
+                                                    val price =
+                                                        (product?.base_price ?: 0.0) + (variant?.price_adjustment ?: 0.0)
 
-                                    }
+                                                    val orderItem = OrderItem(
+                                                        order_id = newOrderId,
+                                                        product_id = cart.product_id,
+                                                        variant_id = cart.variant_id,
+                                                        variant_sku = cart.variant_sku,
+                                                        quantity = cart.quantity,
+                                                        price_at_time = price
+                                                    )
 
-                                    // xóa các cart đã thanh toán
-                                    selectedCarts.forEach { cart ->
-                                        cart.cart_id?.let { id ->
-                                            cartViewModel.deleteCart(id.toString(), userId)
+                                                    android.util.Log.d(
+                                                        "CheckoutScreen",
+                                                        "🛒 Adding item: ${product?.product_name} (x${cart.quantity})"
+                                                    )
+                                                    orderItemViewModel.addOrderItem(orderItem)
+                                                }
+
+                                                // Xóa cart sau khi đã thêm order item
+                                                for (cart in selectedCarts) {
+                                                    cart.cart_id?.let { cartViewModel.deleteCart(it, userId) }
+                                                }
+
+                                                android.util.Log.d(
+                                                    "CheckoutScreen",
+                                                    "🎉 Checkout done for order $newOrderId"
+                                                )
+
+                                                onOrderPlaced(newOrderId)
+                                            } catch (e: Exception) {
+                                                android.util.Log.e(
+                                                    "CheckoutScreen",
+                                                    "Failed to add order items: ${e.message}"
+                                                )
+                                            }
                                         }
+                                    },
+                                    onError = { e ->
+                                        android.util.Log.e("CheckoutScreen", "Failed to create order: ${e.message}")
                                     }
-
-                                    onOrderPlaced(newOrderId)
-                                }
+                                )
                             }
                         },
                         enabled = selectedAddress != null && selectedPayment != null,
@@ -159,6 +187,7 @@ fun CheckoutScreen(
                     ) {
                         Text("Đặt hàng (${selectedCarts.size})", color = Color.White)
                     }
+
                 }
             }
         }

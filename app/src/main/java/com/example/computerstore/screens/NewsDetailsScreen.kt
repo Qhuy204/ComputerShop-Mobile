@@ -32,13 +32,17 @@ import java.util.*
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
+import androidx.navigation.NavController
+import com.example.computerstore.R
+import com.example.computerstore.screens.components.CustomTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsDetailsScreen(
+    navController: NavController,
     blogId: Int,
     blogViewModel: BlogViewModel = viewModel(),
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
 ) {
     val currentBlog by blogViewModel.currentBlog.collectAsState()
 
@@ -48,23 +52,12 @@ fun NewsDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Chi tiết bài viết") },
-                navigationIcon = {
-                    IconButton(onClick = { onBackClick() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại")
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(32.dp),
-                windowInsets = WindowInsets(0.dp), // bỏ padding status bar mặc định
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+            CustomTopBar(
+                title = "Chi tiết bài viết",
+                iconRes = R.drawable.leftarrow,
+                onBackClick = { navController.popBackStack() }
             )
         },
-        contentWindowInsets = WindowInsets(0.dp)
     )
     { padding ->
         currentBlog?.let { blog ->
